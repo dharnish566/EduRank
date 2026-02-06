@@ -152,12 +152,11 @@ const CollegeListingPage: React.FC = () => {
   );
 
   /* =======================
-     JSX (UNCHANGED)
+     JSX
   ======================= */
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
       <div className="bg-white shadow-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -369,10 +368,10 @@ const CollegeListingPage: React.FC = () => {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { key: 'overallScore', label: 'Overall Score' },
-                    { key: 'nirf', label: 'NIRF Rank' },
-                    { key: 'placement', label: 'Placement %' },
-                    { key: 'naac', label: 'NAAC Score' }
+                    { key: 'overallScore' as const, label: 'Overall Score' },
+                    { key: 'nirf' as const, label: 'NIRF Rank' },
+                    { key: 'placement' as const, label: 'Placement %' },
+                    { key: 'naac' as const, label: 'NAAC Score' }
                   ].map(option => (
                     <button
                       key={option.key}
@@ -546,7 +545,6 @@ const CollegeListingPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 };
