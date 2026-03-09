@@ -16,6 +16,9 @@ import {
   Star,
   Briefcase,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+
 
 /* =======================
    Types & Interfaces
@@ -150,6 +153,8 @@ const CollegeListingPage: React.FC = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const navigate = useNavigate();
 
   /* =======================
      JSX
@@ -465,7 +470,7 @@ const CollegeListingPage: React.FC = () => {
                         <div className="flex flex-col gap-2 flex-shrink-0">
                           <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md flex items-center gap-2 whitespace-nowrap">
                             <Eye className="w-4 h-4" />
-                            <span className="hidden sm:inline">View Details</span>
+                            <span className="hidden sm:inline" onClick={()=>navigate('/collegeName')}>View Details</span>
                           </button>
                           <button
                             onClick={() => handleSelectCollege(college.id)}

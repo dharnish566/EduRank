@@ -147,7 +147,7 @@ const CollegeProfile = () => {
                   </div>
 
                   {/* NIRF Rank */}
-                  <div className="relative group border border-white">
+                  <div className="relative group ">
                     <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
                     <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-xl">
                       <div className="flex items-center justify-between mb-2">

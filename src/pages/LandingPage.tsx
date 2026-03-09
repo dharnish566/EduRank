@@ -11,7 +11,7 @@ import {
     Shield,
     Database
 } from 'lucide-react';
-import NavBarHome from '../component/navBar/NavBarHome';
+import NavBarHome from '../components/navBar/NavBarHome';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -110,9 +110,9 @@ export default function LandingPage() {
 
             {/* ---------------- Hero ---------------- */}
             <section id="home" className=" py-25 max-w-8xl mx-auto px-4 bg-emerald-50">
-                <div className="grid md:grid-cols-2 gap-12 items-center border border-amber-950">
+                <div className="grid md:grid-cols-2 gap-12 items-center ">
                     {/* Left Content */}
-                    <div className="space-y-7 border px-20  border-pink-950">
+                    <div className="space-y-7  px-20 ">
                         <div className="inline-block px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
                             🎓 Data-Driven Rankings
                         </div>
@@ -124,7 +124,6 @@ export default function LandingPage() {
                         <p className="text-lg text-gray-600 leading-relaxed">
                             Data-driven, customizable and explainable college ranking analytics to help you make informed decisions.
                         </p>
-
                         <div className="flex gap-4">
                             <button className="group bg-blue-600 text-white px-5 py-3 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition shadow-lg cursor-pointer" 
                             onClick={() => navigate("/college")}>
@@ -148,9 +147,9 @@ export default function LandingPage() {
                     </div>
 
                     {/* right Content */}
-                    <div className="border border-purple-950">
+                    {/* <div className="border border-purple-950"> */}
                         
-                    </div>
+                    {/* </div> */}
                 </div>
             </section>
 
