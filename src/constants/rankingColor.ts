@@ -1,0 +1,25 @@
+const C = {
+  navyDeep:      "oklch(0.12 0.055 255)",
+  navyMid:       "oklch(0.16 0.07 258)",
+  navy:          "oklch(0.22 0.08 258)",
+  navyText:      "oklch(0.18 0.07 258)",
+  indigo:        "oklch(0.55 0.18 265)",
+  indigoBg:      "oklch(0.55 0.18 265 / 0.10)",
+  indigoBorder:  "oklch(0.55 0.18 265 / 0.30)",
+  gold:          "oklch(0.78 0.15 85)",
+  goldSoft:      "oklch(0.78 0.15 85 / 0.80)",
+  goldBg:        "oklch(0.78 0.15 85 / 0.10)",
+  goldBorder:    "oklch(0.78 0.15 85 / 0.28)",
+  pageBg:        "oklch(0.97 0.012 258)",
+  cardBg:        "oklch(1 0 0)",
+  border:        "oklch(0.88 0.02 258)",
+  trackBg:       "oklch(0.90 0.02 258)",
+  textPrimary:   "oklch(0.18 0.07 258)",
+  textMuted:     "oklch(0.52 0.04 258)",
+  textSubtle:    "oklch(0.62 0.03 258)",
+  scoreGradient: "linear-gradient(90deg, oklch(0.55 0.18 265), oklch(0.78 0.15 85))",
+  headerGradient:"linear-gradient(135deg, oklch(0.12 0.055 255) 0%, oklch(0.16 0.07 258) 55%, oklch(0.20 0.09 262) 100%)",
+  navyGradient:  "linear-gradient(135deg, oklch(0.14 0.07 258) 0%, oklch(0.22 0.08 258) 100%)",
+};
+
+export default C

@@ -1,183 +1,147 @@
+import { Routes, Route, useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
-import { AboutSection } from "./components/AboutSection";
-import { AnalyticsPreviewSection } from "./components/AnalyticsPreviewSection";
-import { BenefitsSection } from "./components/BenefitsSection";
-import { CTASection } from "./components/CTASection";
-import { DataSourcesSection } from "./components/DataSourcesSection";
-import { FeaturesSection } from "./components/FeaturesSection";
-import { Footer } from "./components/Footer";
-import { HeroSection } from "./components/HeroSection";
-import { HowItWorksSection } from "./components/HowItWorksSection";
-import { Navbar } from "./components/Navbar";
-import { TopCollegesSection } from "./components/TopCollegesSection";
+
+import { AboutSection } from "./components/home/AboutSection";
+import { AnalyticsPreviewSection } from "./components/home/AnalyticsPreviewSection";
+import { BenefitsSection } from "./components/home/BenefitsSection";
+import { CTASection } from "./components/home/CTASection";
+import { DataSourcesSection } from "./components/home/DataSourcesSection";
+import { FeaturesSection } from "./components/home/FeaturesSection";
+import { Footer } from "./components/home/Footer";
+import { HeroSection } from "./components/home/HeroSection";
+import { HowItWorksSection } from "./components/home/HowItWorksSection";
+import { Navbar } from "./components/home/Navbar";
+import { TopCollegesSection } from "./components/home/TopCollegesSection";
+
 import { AnalyticsDashboardPage } from "./pages/AnalyticsDashboardPage";
 import { CollegeDetailsPage } from "./pages/CollegeDetailsPage";
 import { CollegeFinderPage } from "./pages/CollegeFinderPage";
 import { ComparePage } from "./pages/ComparePage";
 import { RankingsPage } from "./pages/RankingsPage";
 
-type Page =
-  | "home"
-  | "rankings"
-  | "compare"
-  | "details"
-  | "analytics"
-  | "finder";
-
-export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>("home");
-  const [compareIds, setCompareIds] = useState<number[]>([]);
-  const [selectedCollegeId, setSelectedCollegeId] = useState<number | null>(
-    null,
-  );
-
-  const navigateToRankings = () => {
-    setCurrentPage("rankings");
-    window.scrollTo(0, 0);
-  };
-
-  const navigateToHome = () => {
-    setCurrentPage("home");
-    window.scrollTo(0, 0);
-  };
-
-  const navigateToCompare = (ids: number[] = []) => {
-    setCompareIds(ids);
-    setCurrentPage("compare");
-    window.scrollTo(0, 0);
-  };
-
-  const navigateToDetails = (id: number) => {
-    setSelectedCollegeId(id);
-    setCurrentPage("details");
-    window.scrollTo(0, 0);
-  };
-
-  const navigateToAnalytics = () => {
-    setCurrentPage("analytics");
-    window.scrollTo(0, 0);
-  };
-
-  const navigateToFinder = () => {
-    setCurrentPage("finder");
-    window.scrollTo(0, 0);
-  };
-
-  const handleAddToCompare = (id: number) => {
-    setCompareIds((prev) =>
-      prev.includes(id)
-        ? prev.filter((cid) => cid !== id)
-        : prev.length < 4
-          ? [...prev, id]
-          : prev,
-    );
-  };
-
-  if (currentPage === "rankings") {
-    return (
-      <RankingsPage
-        onNavigateHome={navigateToHome}
-        onNavigateToCompare={navigateToCompare}
-        onNavigateToDetails={navigateToDetails}
-        compareIds={compareIds}
-        onCompareIdsChange={setCompareIds}
-      />
-    );
-  }
-
-  if (currentPage === "compare") {
-    return (
-      <ComparePage
-        initialIds={compareIds}
-        onNavigateHome={navigateToHome}
-        onNavigateToRankings={navigateToRankings}
-      />
-    );
-  }
-
-  if (currentPage === "details" && selectedCollegeId !== null) {
-    return (
-      <CollegeDetailsPage
-        collegeId={selectedCollegeId}
-        onNavigateBack={navigateToRankings}
-        onAddToCompare={handleAddToCompare}
-        compareIds={compareIds}
-      />
-    );
-  }
-
-  if (currentPage === "analytics") {
-    return (
-      <AnalyticsDashboardPage
-        onNavigateHome={navigateToHome}
-        onNavigateToRankings={navigateToRankings}
-        onNavigateToCompare={() => navigateToCompare([])}
-        onNavigateToDetails={navigateToDetails}
-      />
-    );
-  }
-
-  if (currentPage === "finder") {
-    return (
-      <CollegeFinderPage
-        onNavigateHome={navigateToHome}
-        onNavigateToDetails={navigateToDetails}
-        onNavigateToCompare={navigateToCompare}
-      />
-    );
-  }
+function HomePage() {
+  const navigate = useNavigate();
 
   return (
     <div className="font-body antialiased">
       <Navbar
-        onNavigateToRankings={navigateToRankings}
-        onNavigateToCompare={() => navigateToCompare([])}
-        onNavigateToAnalytics={navigateToAnalytics}
-        onNavigateToFinder={navigateToFinder}
+        onNavigateToRankings={() => navigate("/rankings")}
+        onNavigateToCompare={() => navigate("/compare")}
+        onNavigateToAnalytics={() => navigate("/analytics")}
+        onNavigateToFinder={() => navigate("/finder")}
       />
+
       <main>
-        <HeroSection onNavigateToRankings={navigateToRankings} />
+        <HeroSection onNavigateToRankings={() => navigate("/rankings")} />
         <AboutSection />
         <FeaturesSection />
         <DataSourcesSection />
         <HowItWorksSection />
-        <TopCollegesSection onNavigateToRankings={navigateToRankings} />
-        <AnalyticsPreviewSection onNavigateToAnalytics={navigateToAnalytics} />
+        <TopCollegesSection onNavigateToRankings={() => navigate("/rankings")} />
+        <AnalyticsPreviewSection onNavigateToAnalytics={() => navigate("/analytics")} />
         <BenefitsSection />
         <CTASection
-          onNavigateToRankings={navigateToRankings}
-          onNavigateToCompare={() => navigateToCompare([])}
+          onNavigateToRankings={() => navigate("/rankings")}
+          onNavigateToCompare={() => navigate("/compare")}
         />
       </main>
+
       <Footer
-        onNavigateToCompare={() => navigateToCompare([])}
-        onNavigateToAnalytics={navigateToAnalytics}
-        onNavigateToFinder={navigateToFinder}
+        onNavigateToCompare={() => navigate("/compare")}
+        onNavigateToAnalytics={() => navigate("/analytics")}
+        onNavigateToFinder={() => navigate("/finder")}
       />
     </div>
   );
 }
 
+function CollegeDetailsWrapper() {
+  const { id } = useParams();
+  const navigate = useNavigate();
 
+  const [compareIds, setCompareIds] = useState<number[]>([]);
 
-// import CollegeDetails from './pages/CollegeDetails';
-// import CollegeList from './pages/CollegeList'
-// import LandingPage from './pages/LandingPage'
-// import { BrowserRouter, Routes, Route } from 'react-router-dom';
+  const handleAddToCompare = (cid: number) => {
+    setCompareIds((prev) =>
+      prev.includes(cid)
+        ? prev.filter((v) => v !== cid)
+        : prev.length < 4
+        ? [...prev, cid]
+        : prev
+    );
+  };
 
+  return (
+    <CollegeDetailsPage
+      collegeId={Number(id)}
+      onNavigateBack={() => navigate("/rankings")}
+      onAddToCompare={handleAddToCompare}
+      compareIds={compareIds}
+    />
+  );
+}
 
-// function App() {
-//   return (
-//     <>
-//       <BrowserRouter>
-//         <Routes>
-//           <Route path="/" element={<LandingPage />} />
-//           <Route path="/college" element={<CollegeList />} />
-//           <Route path="/collegeName" element={<CollegeDetails />} />
-//         </Routes>
-//       </BrowserRouter>
-//     </>
-//   )
-// }
+export default function App() {
+  const navigate = useNavigate();
+  const [compareIds, setCompareIds] = useState<number[]>([]);
 
-// export default App
+  return (
+    <Routes>
+
+      <Route path="/" element={<HomePage />} />
+
+      <Route
+        path="/rankings"
+        element={
+          <RankingsPage
+            onNavigateHome={() => navigate("/")}
+            onNavigateToCompare={(ids) => {
+              setCompareIds(ids);
+              navigate("/compare");
+            }}
+            onNavigateToDetails={(id) => navigate(`/college/${id}`)}
+            compareIds={compareIds}
+            onCompareIdsChange={setCompareIds}
+          />
+        }
+      />
+
+      <Route
+        path="/compare"
+        element={
+          <ComparePage
+            initialIds={compareIds}
+            onNavigateHome={() => navigate("/")}
+            onNavigateToRankings={() => navigate("/rankings")}
+          />
+        }
+      />
+
+      <Route path="/college/:id" element={<CollegeDetailsWrapper />} />
+
+      <Route
+        path="/analytics"
+        element={
+          <AnalyticsDashboardPage
+            onNavigateHome={() => navigate("/")}
+            onNavigateToRankings={() => navigate("/rankings")}
+            onNavigateToCompare={() => navigate("/compare")}
+            onNavigateToDetails={(id) => navigate(`/college/${id}`)}
+          />
+        }
+      />
+
+      <Route
+        path="/finder"
+        element={
+          <CollegeFinderPage
+            onNavigateHome={() => navigate("/")}
+            onNavigateToDetails={(id) => navigate(`/college/${id}`)}
+            onNavigateToCompare={() => navigate("/compare")}
+          />
+        }
+      />
+
+    </Routes>
+  );
+}

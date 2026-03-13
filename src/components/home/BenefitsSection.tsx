@@ -1,4 +1,4 @@
-import { useScrollAnimation } from "../hooks/useScrollAnimation";
+import { useScrollAnimation } from "../../hooks/useScrollAnimation";
 import { CheckCircle2 } from "lucide-react";
 
 const BENEFITS = [
@@ -13,11 +13,16 @@ export function BenefitsSection() {
 
   return (
     <section className="py-20 relative overflow-hidden">
-      {/* Gradient background */}
+      {/* Gradient background — kept identical, already uses explicit oklch */}
       <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.22_0.06_255)] via-[oklch(0.30_0.12_265)] to-[oklch(0.45_0.18_265)]" />
+
       {/* Decorative circles */}
       <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white/5 blur-3xl" />
-      <div className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full bg-gold/10 blur-3xl" />
+      {/* FIXED: "bg-gold/10" (undefined token) → explicit oklch gold */}
+      <div
+        className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full blur-3xl"
+        style={{ background: "oklch(0.78 0.15 85 / 0.10)" }}
+      />
       <div className="absolute inset-0 grid-pattern opacity-10" />
 
       <div
@@ -26,12 +31,38 @@ export function BenefitsSection() {
       >
         {/* Header */}
         <div className="text-center mb-14">
-          <div className="eyebrow-tag text-white/60 mb-4 justify-center">
+          {/* FIXED: "text-white/60" + "justify-center" → explicit style (eyebrow-tag is inline-flex) */}
+          <div
+            className="eyebrow-tag mb-4"
+            style={{
+              display: "inline-flex",
+              justifyContent: "center",
+              color: "oklch(1 0 0 / 0.65)",
+              background: "oklch(1 0 0 / 0.08)",
+              border: "1px solid oklch(1 0 0 / 0.18)",
+            }}
+          >
             Why Choose Us
           </div>
+
+          {/* "text-white" — standard Tailwind, kept as-is */}
+          {/* FIXED: "text-gradient-gold" (undefined token) → explicit gold gradient matching HeroSection */}
           <h2 className="heading-display text-4xl md:text-5xl lg:text-6xl text-white mb-4">
-            Benefits for <span className="text-gradient-gold">Students</span>
+            Benefits for{" "}
+            <span
+              style={{
+                background: "linear-gradient(135deg, oklch(0.88 0.17 88) 0%, oklch(0.78 0.15 85) 50%, oklch(0.70 0.18 75) 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                filter: "drop-shadow(0 0 14px oklch(0.78 0.15 85 / 0.45))",
+              }}
+            >
+              Students
+            </span>
           </h2>
+
+          {/* "text-white/65" — standard Tailwind opacity modifier, kept as-is */}
           <p className="text-white/65 max-w-xl mx-auto text-base">
             Designed with students and decision-makers in mind, the platform
             removes friction from the college research process.
@@ -52,8 +83,13 @@ export function BenefitsSection() {
               }}
             >
               <div className="flex-shrink-0 mt-0.5">
-                <CheckCircle2 className="w-6 h-6 text-gold group-hover:scale-110 transition-transform duration-200" />
+                {/* FIXED: "text-gold" (undefined token) → explicit oklch gold */}
+                <CheckCircle2
+                  className="w-6 h-6 group-hover:scale-110 transition-transform duration-200"
+                  style={{ color: "oklch(0.78 0.15 85)" }}
+                />
               </div>
+              {/* "text-white/90" — standard Tailwind, kept as-is */}
               <p className="text-white/90 text-sm md:text-base leading-relaxed font-medium">
                 {benefit}
               </p>

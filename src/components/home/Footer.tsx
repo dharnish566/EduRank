@@ -54,18 +54,27 @@ export function Footer({
   };
 
   return (
-    <footer className="bg-navy text-white">
+    // FIXED: "bg-navy" (undefined token) → explicit deep navy gradient matching HeroSection
+    <footer
+      className="text-white"
+      style={{
+        background: "linear-gradient(135deg, oklch(0.12 0.055 255) 0%, oklch(0.16 0.07 258) 100%)",
+      }}
+    >
       <div className="container mx-auto px-4 pt-14 pb-6">
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 pb-10 border-b border-white/10">
+
           {/* Col 1: Logo + Description */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <BarChart3 className="w-6 h-6 text-gold" />
+              {/* FIXED: "text-gold" (undefined token) → explicit oklch */}
+              <BarChart3 className="w-6 h-6" style={{ color: "oklch(0.78 0.15 85)" }} />
               <span className="font-heading text-lg font-bold text-white">
                 CollegeRank
               </span>
             </div>
+            {/* "text-white/60" / "text-white/40" — standard Tailwind opacity, kept as-is */}
             <p className="text-white/60 text-sm leading-relaxed mb-4">
               College Ranking Analytics Platform provides integrated academic
               ranking insights to support informed educational decisions.
@@ -102,7 +111,14 @@ export function Footer({
                         link.href === "#finder",
                       )
                     }
-                    className="text-white/60 hover:text-gold text-sm transition-colors duration-150"
+                    // FIXED: "hover:text-gold" (undefined token) → explicit via mouse handlers
+                    className="text-white/60 text-sm transition-colors duration-150 cursor-pointer"
+                    onMouseEnter={(e) =>
+                      ((e.currentTarget as HTMLButtonElement).style.color = "oklch(0.78 0.15 85)")
+                    }
+                    onMouseLeave={(e) =>
+                      ((e.currentTarget as HTMLButtonElement).style.color = "")
+                    }
                   >
                     {link.label}
                   </button>
@@ -119,11 +135,18 @@ export function Footer({
             <ul className="flex flex-col gap-2.5">
               {DATA_LINKS.map((link) => (
                 <li key={link.href}>
+                  {/* FIXED: "hover:text-gold" (undefined token) → explicit via mouse handlers */}
                   <a
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-white/60 hover:text-gold text-sm transition-colors duration-150 inline-flex items-center gap-1.5"
+                    className="text-white/60 text-sm transition-colors duration-150 inline-flex items-center gap-1.5"
+                    onMouseEnter={(e) =>
+                      ((e.currentTarget as HTMLAnchorElement).style.color = "oklch(0.78 0.15 85)")
+                    }
+                    onMouseLeave={(e) =>
+                      ((e.currentTarget as HTMLAnchorElement).style.color = "")
+                    }
                   >
                     {link.label}
                     <ExternalLink className="w-3 h-3 opacity-60" />
@@ -147,21 +170,11 @@ export function Footer({
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
           <p className="text-white/40 text-xs text-center sm:text-left">
             © {year} College Ranking Analytics Platform. All rights reserved.
           </p>
-          <p className="text-white/40 text-xs">
-            Built with ❤️ using{" "}
-            <a
-              href={caffeineUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gold/80 hover:text-gold transition-colors"
-            >
-              caffeine.ai
-            </a>
-          </p>
+          
         </div>
       </div>
     </footer>

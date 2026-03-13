@@ -40,8 +40,6 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
-  Scatter,
-  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -82,189 +80,55 @@ interface CollegeWithScore extends College {
 
 type SortKey = "matchScore" | "nirfRank" | "avgPackageLPA" | "feeMin";
 
-const SPECIALIZATIONS: Record<string, string[]> = {
-  engineering: [
-    "Any Specialization",
-    "CSE",
-    "ECE",
-    "Mechanical",
-    "Civil",
-    "EEE",
-    "IT",
-    "Data Science",
-    "AI & ML",
-  ],
-  management: ["Any Specialization", "MBA", "BBA"],
-  medical: ["Any Specialization", "MBBS", "BDS"],
-  arts: ["Any Specialization", "B.Sc", "B.A", "B.Com"],
-};
+/* ─────────────────────────────────────────────────────────────────────────────
+   DESIGN TOKENS — identical to ComparePage / CollegeDetailsPage / RankingsPage
+───────────────────────────────────────────────────────────────────────────── */
+const T = {
+  heroBg:      "oklch(0.16 0.055 258)",
+  surface:     "oklch(0.975 0.005 258)",
+  white:       "oklch(1 0 0)",
+  indigo:      "oklch(0.46 0.19 266)",
+  indigoDim:   "oklch(0.46 0.19 266 / 0.12)",
+  indigoGhost: "oklch(0.46 0.19 266 / 0.06)",
+  gold:        "oklch(0.80 0.16 86)",
+  goldMid:     "oklch(0.60 0.14 78)",
+  goldText:    "oklch(0.42 0.14 78)",
+  goldGhost:   "oklch(0.80 0.16 86 / 0.10)",
+  green:       "oklch(0.52 0.18 148)",
+  greenText:   "oklch(0.32 0.18 148)",
+  red:         "oklch(0.54 0.20 27)",
+  redText:     "oklch(0.40 0.20 27)",
+  navy:        "oklch(0.20 0.05 258)",
+  muted:       "oklch(0.50 0.025 258)",
+  border:      "oklch(0.91 0.01 258)",
+} as const;
 
-const STATES = [
-  "Any State",
-  "Tamil Nadu",
-  "Maharashtra",
-  "Delhi",
-  "Karnataka",
-  "Telangana",
-  "West Bengal",
-  "Rajasthan",
-  "Uttar Pradesh",
-];
-
-const CITIES_BY_STATE: Record<string, string[]> = {
-  "Tamil Nadu": [
-    "Any City",
-    "Chennai",
-    "Coimbatore",
-    "Vellore",
-    "Trichy",
-    "Thanjavur",
-  ],
-  Maharashtra: ["Any City", "Mumbai", "Pune", "Nagpur"],
-  Delhi: ["Any City", "New Delhi"],
-  Karnataka: ["Any City", "Bangalore", "Mysore"],
-  Telangana: ["Any City", "Hyderabad"],
-  "West Bengal": ["Any City", "Kolkata"],
-  Rajasthan: ["Any City", "Jaipur"],
-  "Uttar Pradesh": ["Any City", "Lucknow", "Kanpur"],
-};
-
-const NIRF_TOP_N_LABELS: Record<string, string> = {
-  any: "Any Rank",
-  top10: "Top 10",
-  top25: "Top 25",
-  top50: "Top 50",
-  top100: "Top 100",
-};
-
-function getNirfLimit(nirfTopN: FinderInputs["nirfTopN"]): number {
-  switch (nirfTopN) {
-    case "top10":
-      return 10;
-    case "top25":
-      return 25;
-    case "top50":
-      return 50;
-    case "top100":
-      return 100;
-    default:
-      return Number.POSITIVE_INFINITY;
+/* ─── Type badge ─── */
+function getTypeBadgeStyle(type: College["type"]) {
+  switch (type) {
+    case "IIT":     return "bg-[oklch(0.46_0.19_266/0.12)] text-[oklch(0.30_0.18_266)] border border-[oklch(0.46_0.19_266/0.35)]";
+    case "NIT":     return "bg-[oklch(0.52_0.18_148/0.12)] text-[oklch(0.28_0.18_148)] border border-[oklch(0.52_0.18_148/0.35)]";
+    case "Deemed":  return "bg-[oklch(0.80_0.16_86/0.14)]  text-[oklch(0.42_0.14_78)]  border border-[oklch(0.80_0.16_86/0.38)]";
+    case "State":   return "bg-[oklch(0.54_0.06_240/0.12)] text-[oklch(0.30_0.05_240)] border border-[oklch(0.54_0.06_240/0.35)]";
+    case "Private": return "bg-[oklch(0.56_0.18_305/0.12)] text-[oklch(0.32_0.17_305)] border border-[oklch(0.56_0.18_305/0.35)]";
   }
 }
 
-function computeMatchScore(
-  college: College,
-  inputs: FinderInputs,
-): CollegeWithScore {
-  let cutoffScore = 0;
-  let courseScore = 0;
-  let locationScore = 0;
-  let budgetScore = 0;
-  let prefsScore = 0;
-
-  // ── Cutoff / Score eligibility (25 pts) ──────────────────────────────────
-  const cutoffRequirements: Record<College["type"], number> = {
-    IIT: 170,
-    NIT: 150,
-    Deemed: 120,
-    State: 100,
-    Private: 90,
-  };
-  const req = cutoffRequirements[college.type];
-  if (inputs.cutoffScore >= req) {
-    cutoffScore = 25;
-  } else if (inputs.cutoffScore >= req - 20) {
-    cutoffScore = Math.round(25 * (1 - (req - inputs.cutoffScore) / 20));
+/* ─── NAAC badge ─── */
+function getNaacBadgeStyle(grade: College["naacGrade"]) {
+  switch (grade) {
+    case "A++": return "bg-[oklch(0.80_0.16_86/0.15)]  text-[oklch(0.42_0.14_78)]  border border-[oklch(0.80_0.16_86/0.45)]  font-bold";
+    case "A+":  return "bg-[oklch(0.52_0.18_148/0.12)] text-[oklch(0.28_0.18_148)] border border-[oklch(0.52_0.18_148/0.42)] font-bold";
+    case "A":   return "bg-[oklch(0.46_0.19_266/0.12)] text-[oklch(0.28_0.18_266)] border border-[oklch(0.46_0.19_266/0.38)] font-bold";
+    case "B++": return "bg-[oklch(0.54_0.06_240/0.12)] text-[oklch(0.34_0.05_240)] border border-[oklch(0.54_0.06_240/0.35)] font-bold";
   }
-
-  // ── Course match (25 pts) ─────────────────────────────────────────────────
-  const degreeKeywords: Record<string, string[]> = {
-    engineering: ["B.E", "B.Tech", "M.E", "M.Tech", "BE", "BTech"],
-    management: ["MBA", "BBA"],
-    medical: ["MBBS", "BDS", "MBBS/BDS"],
-    arts: ["B.Sc", "B.A", "B.Com", "BSc", "BA", "BCom"],
-  };
-  const keywords = degreeKeywords[inputs.degreeType] || [];
-  const hasDegreeMatch = college.courses.some((c) =>
-    keywords.some((k) => c.toLowerCase().includes(k.toLowerCase())),
-  );
-  if (hasDegreeMatch) {
-    if (
-      inputs.specialization &&
-      inputs.specialization !== "Any Specialization"
-    ) {
-      const hasSpec = college.coursesDetailed.some((cd) =>
-        cd.name.toLowerCase().includes(inputs.specialization.toLowerCase()),
-      );
-      courseScore = hasSpec ? 25 : 15;
-    } else {
-      courseScore = 25;
-    }
-  }
-
-  // ── Location match (20 pts) ───────────────────────────────────────────────
-  if (!inputs.preferredState || inputs.preferredState === "Any State") {
-    locationScore = 20;
-  } else if (college.state === inputs.preferredState) {
-    if (!inputs.preferredCity || inputs.preferredCity === "Any City") {
-      locationScore = 20;
-    } else if (college.city === inputs.preferredCity) {
-      locationScore = 20;
-    } else {
-      locationScore = 12;
-    }
-  }
-
-  // ── Budget match (15 pts) ─────────────────────────────────────────────────
-  const feeInRupees = college.feeRange.min * 1000;
-  const maxFee = inputs.maxAnnualFee;
-  if (feeInRupees <= maxFee) {
-    budgetScore = 15;
-  } else if (feeInRupees <= maxFee * 1.2) {
-    budgetScore = Math.round(
-      15 * (1 - (feeInRupees - maxFee) / (maxFee * 0.2)),
-    );
-  }
-
-  // ── Additional preferences (15 pts) ──────────────────────────────────────
-  if (
-    inputs.collegeTypes.length === 0 ||
-    inputs.collegeTypes.includes(college.type)
-  ) {
-    prefsScore += 5;
-  }
-  if (college.placementPct >= inputs.minPlacementPct) {
-    prefsScore += 5;
-  }
-  const hasHostel = college.facilities.some((f) =>
-    f.name.toLowerCase().includes("hostel"),
-  );
-  if (!inputs.hostelRequired || hasHostel) {
-    prefsScore += 5;
-  }
-
-  const total = Math.min(
-    100,
-    cutoffScore + courseScore + locationScore + budgetScore + prefsScore,
-  );
-
-  return {
-    ...college,
-    matchScore: total,
-    scoreBreakdown: {
-      cutoff: cutoffScore,
-      course: courseScore,
-      location: locationScore,
-      budget: budgetScore,
-      prefs: prefsScore,
-    },
-  };
 }
 
+/* ─── Match helpers ─── */
 function getMatchColor(score: number): string {
-  if (score >= 80) return "oklch(0.55 0.18 145)";
-  if (score >= 60) return "oklch(0.72 0.17 75)";
-  return "oklch(0.55 0.22 25)";
+  if (score >= 80) return T.green;
+  if (score >= 60) return T.gold;
+  return T.red;
 }
 
 function getMatchLabel(score: number): string {
@@ -274,68 +138,141 @@ function getMatchLabel(score: number): string {
   return "Low";
 }
 
-function getTypeBadgeStyle(type: College["type"]) {
-  switch (type) {
-    case "IIT":
-      return "bg-[oklch(0.45_0.18_265/0.15)] text-[oklch(0.28_0.18_265)] border border-[oklch(0.45_0.18_265/0.35)]";
-    case "NIT":
-      return "bg-[oklch(0.55_0.18_165/0.15)] text-[oklch(0.30_0.18_165)] border border-[oklch(0.55_0.18_165/0.35)]";
-    case "Deemed":
-      return "bg-[oklch(0.80_0.15_75/0.18)] text-[oklch(0.42_0.15_75)] border border-[oklch(0.78_0.15_85/0.35)]";
-    case "State":
-      return "bg-[oklch(0.55_0.05_240/0.15)] text-[oklch(0.32_0.05_240)] border border-[oklch(0.55_0.05_240/0.35)]";
-    case "Private":
-      return "bg-[oklch(0.55_0.18_300/0.12)] text-[oklch(0.32_0.18_300)] border border-[oklch(0.55_0.18_300/0.30)]";
-  }
-}
-
-function getNaacBadgeStyle(grade: College["naacGrade"]) {
-  switch (grade) {
-    case "A++":
-      return "bg-gold/15 text-[oklch(0.48_0.15_75)] border border-gold/40 font-bold";
-    case "A+":
-      return "bg-[oklch(0.55_0.18_145/0.15)] text-[oklch(0.30_0.18_145)] border border-[oklch(0.55_0.18_145/0.40)] font-bold";
-    case "A":
-      return "bg-indigo/10 text-indigo border border-indigo/30 font-bold";
-    case "B++":
-      return "bg-[oklch(0.55_0.05_240/0.12)] text-[oklch(0.38_0.05_240)] border border-[oklch(0.55_0.05_240/0.30)] font-bold";
-  }
-}
-
+/* ─── Rank medal ─── */
 function getRankMedalStyle(rank: number) {
-  if (rank === 1)
-    return {
-      bg: "radial-gradient(ellipse at 30% 30%, oklch(0.90 0.18 88), oklch(0.72 0.18 72))",
-      text: "oklch(0.30 0.08 70)",
-      shadow: "0 4px 16px oklch(0.78 0.15 85 / 0.5)",
-    };
-  if (rank === 2)
-    return {
-      bg: "radial-gradient(ellipse at 30% 30%, oklch(0.88 0.01 250), oklch(0.70 0.01 250))",
-      text: "oklch(0.30 0.02 250)",
-      shadow: "0 4px 16px oklch(0.70 0.01 250 / 0.45)",
-    };
-  if (rank === 3)
-    return {
-      bg: "radial-gradient(ellipse at 30% 30%, oklch(0.78 0.12 55), oklch(0.60 0.12 52))",
-      text: "oklch(0.25 0.08 50)",
-      shadow: "0 4px 16px oklch(0.65 0.12 55 / 0.45)",
-    };
+  if (rank === 1) return {
+    bg:     `radial-gradient(ellipse at 30% 30%, oklch(0.92 0.18 90), oklch(0.72 0.18 72))`,
+    text:   "oklch(0.30 0.08 70)",
+    shadow: `0 4px 16px ${T.gold}80`,
+  };
+  if (rank === 2) return {
+    bg:     "radial-gradient(ellipse at 30% 30%, oklch(0.88 0.01 250), oklch(0.70 0.01 250))",
+    text:   "oklch(0.30 0.02 250)",
+    shadow: "0 4px 16px oklch(0.70 0.01 250 / 0.45)",
+  };
+  if (rank === 3) return {
+    bg:     "radial-gradient(ellipse at 30% 30%, oklch(0.78 0.12 55), oklch(0.60 0.12 52))",
+    text:   "oklch(0.25 0.08 50)",
+    shadow: "0 4px 16px oklch(0.65 0.12 55 / 0.45)",
+  };
   return {
-    bg: "oklch(0.22 0.06 255)",
-    text: "oklch(0.98 0.005 240)",
+    bg:     T.heroBg,
+    text:   "oklch(0.98 0.005 240)",
     shadow: "none",
   };
 }
 
-function MatchScoreRing({
-  score,
-  size = 72,
-}: { score: number; size?: number }) {
-  const r = (size - 10) / 2;
-  const circ = 2 * Math.PI * r;
+/* ─── Scoring ─── */
+const SPECIALIZATIONS: Record<string, string[]> = {
+  engineering: ["Any Specialization","CSE","ECE","Mechanical","Civil","EEE","IT","Data Science","AI & ML"],
+  management:  ["Any Specialization","MBA","BBA"],
+  medical:     ["Any Specialization","MBBS","BDS"],
+  arts:        ["Any Specialization","B.Sc","B.A","B.Com"],
+};
+
+const STATES = [
+  "Any State","Tamil Nadu","Maharashtra","Delhi","Karnataka",
+  "Telangana","West Bengal","Rajasthan","Uttar Pradesh",
+];
+
+const CITIES_BY_STATE: Record<string, string[]> = {
+  "Tamil Nadu":    ["Any City","Chennai","Coimbatore","Vellore","Trichy","Thanjavur"],
+  Maharashtra:     ["Any City","Mumbai","Pune","Nagpur"],
+  Delhi:           ["Any City","New Delhi"],
+  Karnataka:       ["Any City","Bangalore","Mysore"],
+  Telangana:       ["Any City","Hyderabad"],
+  "West Bengal":   ["Any City","Kolkata"],
+  Rajasthan:       ["Any City","Jaipur"],
+  "Uttar Pradesh": ["Any City","Lucknow","Kanpur"],
+};
+
+const NIRF_TOP_N_LABELS: Record<string, string> = {
+  any: "Any Rank", top10: "Top 10", top25: "Top 25", top50: "Top 50", top100: "Top 100",
+};
+
+function getNirfLimit(nirfTopN: FinderInputs["nirfTopN"]): number {
+  switch (nirfTopN) {
+    case "top10":  return 10;
+    case "top25":  return 25;
+    case "top50":  return 50;
+    case "top100": return 100;
+    default:       return Number.POSITIVE_INFINITY;
+  }
+}
+
+function computeMatchScore(college: College, inputs: FinderInputs): CollegeWithScore {
+  let cutoffScore   = 0;
+  let courseScore   = 0;
+  let locationScore = 0;
+  let budgetScore   = 0;
+  let prefsScore    = 0;
+
+  const cutoffRequirements: Record<College["type"], number> = {
+    IIT: 170, NIT: 150, Deemed: 120, State: 100, Private: 90,
+  };
+  const req = cutoffRequirements[college.type];
+  if (inputs.cutoffScore >= req) {
+    cutoffScore = 25;
+  } else if (inputs.cutoffScore >= req - 20) {
+    cutoffScore = Math.round(25 * (1 - (req - inputs.cutoffScore) / 20));
+  }
+
+  const degreeKeywords: Record<string, string[]> = {
+    engineering: ["B.E","B.Tech","M.E","M.Tech","BE","BTech"],
+    management:  ["MBA","BBA"],
+    medical:     ["MBBS","BDS","MBBS/BDS"],
+    arts:        ["B.Sc","B.A","B.Com","BSc","BA","BCom"],
+  };
+  const keywords      = degreeKeywords[inputs.degreeType] || [];
+  const hasDegreeMatch = college.courses.some((c) => keywords.some((k) => c.toLowerCase().includes(k.toLowerCase())));
+  if (hasDegreeMatch) {
+    if (inputs.specialization && inputs.specialization !== "Any Specialization") {
+      const hasSpec = college.coursesDetailed.some((cd) =>
+        cd.name.toLowerCase().includes(inputs.specialization.toLowerCase()),
+      );
+      courseScore = hasSpec ? 25 : 15;
+    } else {
+      courseScore = 25;
+    }
+  }
+
+  if (!inputs.preferredState || inputs.preferredState === "Any State") {
+    locationScore = 20;
+  } else if (college.state === inputs.preferredState) {
+    locationScore = (!inputs.preferredCity || inputs.preferredCity === "Any City")
+      ? 20
+      : college.city === inputs.preferredCity ? 20 : 12;
+  }
+
+  const feeInRupees = college.feeRange.min * 1000;
+  const maxFee      = inputs.maxAnnualFee;
+  if (feeInRupees <= maxFee) {
+    budgetScore = 15;
+  } else if (feeInRupees <= maxFee * 1.2) {
+    budgetScore = Math.round(15 * (1 - (feeInRupees - maxFee) / (maxFee * 0.2)));
+  }
+
+  if (inputs.collegeTypes.length === 0 || inputs.collegeTypes.includes(college.type)) prefsScore += 5;
+  if (college.placementPct >= inputs.minPlacementPct) prefsScore += 5;
+  const hasHostel = college.facilities.some((f) => f.name.toLowerCase().includes("hostel"));
+  if (!inputs.hostelRequired || hasHostel) prefsScore += 5;
+
+  const total = Math.min(100, cutoffScore + courseScore + locationScore + budgetScore + prefsScore);
+  return {
+    ...college,
+    matchScore: total,
+    scoreBreakdown: { cutoff: cutoffScore, course: courseScore, location: locationScore, budget: budgetScore, prefs: prefsScore },
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MATCH SCORE RING
+═══════════════════════════════════════════════════════════════════════════ */
+function MatchScoreRing({ score, size = 72 }: { score: number; size?: number }) {
+  const r     = (size - 10) / 2;
+  const circ  = 2 * Math.PI * r;
   const offset = circ - (score / 100) * circ;
-  const color = getMatchColor(score);
+  const color  = getMatchColor(score);
 
   return (
     <svg
@@ -347,40 +284,32 @@ function MatchScoreRing({
     >
       <title>Match score: {score}%</title>
       <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
+        cx={size / 2} cy={size / 2} r={r}
         fill="none"
-        stroke="oklch(0.22 0.06 255 / 0.12)"
+        stroke={`${T.heroBg}1F`}
         strokeWidth={7}
       />
       <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
+        cx={size / 2} cy={size / 2} r={r}
         fill="none"
         stroke={color}
         strokeWidth={7}
         strokeDasharray={circ}
         strokeDashoffset={offset}
         strokeLinecap="round"
-        style={{
-          transition: "stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)",
-        }}
+        style={{ transition: "stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)" }}
       />
       <text
-        x={size / 2}
-        y={size / 2 + 5}
+        x={size / 2} y={size / 2 + 5}
         textAnchor="middle"
         fill={color}
         fontSize={size * 0.24}
         fontWeight={700}
         style={{
-          transform: "rotate(90deg)",
+          transform:       "rotate(90deg)",
           transformOrigin: `${size / 2}px ${size / 2}px`,
-          fontFamily: "Bricolage Grotesque, sans-serif",
+          fontFamily:      "Bricolage Grotesque, sans-serif",
         }}
-        className="rotate-90"
       >
         {score}%
       </text>
@@ -388,17 +317,18 @@ function MatchScoreRing({
   );
 }
 
-// ─── Section: Form ────────────────────────────────────────────────────────────
-
-function FormSection({
-  label,
-  children,
-}: { label: string; children: React.ReactNode }) {
+/* ═══════════════════════════════════════════════════════════════════════════
+   FORM HELPERS
+═══════════════════════════════════════════════════════════════════════════ */
+function FormSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="h-4 w-0.5 rounded-full bg-gold" />
-        <h3 className="font-heading font-bold text-navy text-sm uppercase tracking-widest">
+      <div className="flex items-center gap-2.5">
+        <div className="h-4 w-0.5 rounded-full" style={{ background: T.gold }} />
+        <h3
+          className="font-heading font-bold text-sm uppercase tracking-widest"
+          style={{ color: T.navy }}
+        >
           {label}
         </h3>
       </div>
@@ -408,47 +338,35 @@ function FormSection({
 }
 
 function SliderField({
-  label,
-  value,
-  min,
-  max,
-  step,
-  format,
-  onChange,
-  hint,
+  label, value, min, max, step, format, onChange, hint,
 }: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  format: (v: number) => string;
-  onChange: (v: number) => void;
-  hint?: string;
+  label: string; value: number; min: number; max: number; step: number;
+  format: (v: number) => string; onChange: (v: number) => void; hint?: string;
 }) {
   return (
     <div className="sm:col-span-2 space-y-2">
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-semibold text-foreground">{label}</Label>
-        <span className="text-sm font-bold text-indigo bg-indigo/10 px-2.5 py-0.5 rounded-full border border-indigo/20">
+        <Label className="text-sm font-semibold" style={{ color: T.navy }}>{label}</Label>
+        <span
+          className="text-sm font-bold px-2.5 py-0.5 rounded-full"
+          style={{
+            color:      T.indigo,
+            background: T.indigoDim,
+            border:     `1px solid ${T.indigo}33`,
+          }}
+        >
           {format(value)}
         </span>
       </div>
-      <Slider
-        value={[value]}
-        min={min}
-        max={max}
-        step={step}
-        onValueChange={([v]) => onChange(v)}
-        className="w-full"
-      />
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v]) => onChange(v)} className="w-full" />
+      {hint && <p className="text-xs" style={{ color: T.muted }}>{hint}</p>}
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+═══════════════════════════════════════════════════════════════════════════ */
 export function CollegeFinderPage({
   onNavigateHome,
   onNavigateToDetails,
@@ -457,119 +375,88 @@ export function CollegeFinderPage({
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const [inputs, setInputs] = useState<FinderInputs>({
-    cutoffScore: 140,
-    academicPct: 75,
-    category: "general",
-    degreeType: "engineering",
-    specialization: "Any Specialization",
-    preferredState: "Any State",
-    preferredCity: "Any City",
-    maxAnnualFee: 300000,
+    cutoffScore:           140,
+    academicPct:           75,
+    category:              "general",
+    degreeType:            "engineering",
+    specialization:        "Any Specialization",
+    preferredState:        "Any State",
+    preferredCity:         "Any City",
+    maxAnnualFee:          300000,
     scholarshipPreference: false,
-    collegeTypes: [],
-    minPlacementPct: 60,
-    nirfTopN: "any",
-    hostelRequired: false,
+    collegeTypes:          [],
+    minPlacementPct:       60,
+    nirfTopN:              "any",
+    hostelRequired:        false,
   });
 
-  const [results, setResults] = useState<CollegeWithScore[] | null>(null);
+  const [results, setResults]       = useState<CollegeWithScore[] | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [sortKey, setSortKey] = useState<SortKey>("matchScore");
-  const [savedIds, setSavedIds] = useState<number[]>([]);
+  const [sortKey, setSortKey]        = useState<SortKey>("matchScore");
+  const [savedIds, setSavedIds]      = useState<number[]>([]);
   const [shortlistOpen, setShortlistOpen] = useState(false);
 
   const update = useCallback(
-    <K extends keyof FinderInputs>(key: K, value: FinderInputs[K]) => {
-      setInputs((prev) => ({ ...prev, [key]: value }));
-    },
+    <K extends keyof FinderInputs>(key: K, value: FinderInputs[K]) =>
+      setInputs((prev) => ({ ...prev, [key]: value })),
     [],
   );
 
-  const cities =
-    inputs.preferredState !== "Any State"
-      ? (CITIES_BY_STATE[inputs.preferredState] ?? ["Any City"])
-      : ["Any City"];
-
-  const specializations = SPECIALIZATIONS[inputs.degreeType] ?? [
-    "Any Specialization",
-  ];
+  const cities        = inputs.preferredState !== "Any State" ? (CITIES_BY_STATE[inputs.preferredState] ?? ["Any City"]) : ["Any City"];
+  const specializations = SPECIALIZATIONS[inputs.degreeType] ?? ["Any Specialization"];
 
   const handleFind = async () => {
     setIsAnalyzing(true);
     await new Promise((r) => setTimeout(r, 600));
-
-    const nirfLimit = getNirfLimit(inputs.nirfTopN);
-    const scored = COLLEGES.filter((c) => c.nirfRank <= nirfLimit)
+    const nirfLimit  = getNirfLimit(inputs.nirfTopN);
+    const scored     = COLLEGES.filter((c) => c.nirfRank <= nirfLimit)
       .map((c) => computeMatchScore(c, inputs))
       .filter((c) => c.matchScore > 0)
       .sort((a, b) => b.matchScore - a.matchScore);
-
     setResults(scored);
     setIsAnalyzing(false);
     setSortKey("matchScore");
-
-    setTimeout(() => {
-      resultsRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 100);
+    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   };
 
   const sortedResults = useMemo(() => {
     if (!results) return null;
     return [...results].sort((a, b) => {
       switch (sortKey) {
-        case "matchScore":
-          return b.matchScore - a.matchScore;
-        case "nirfRank":
-          return a.nirfRank - b.nirfRank;
-        case "avgPackageLPA":
-          return b.avgPackageLPA - a.avgPackageLPA;
-        case "feeMin":
-          return a.feeRange.min - b.feeRange.min;
+        case "matchScore":    return b.matchScore - a.matchScore;
+        case "nirfRank":      return a.nirfRank - b.nirfRank;
+        case "avgPackageLPA": return b.avgPackageLPA - a.avgPackageLPA;
+        case "feeMin":        return a.feeRange.min - b.feeRange.min;
       }
     });
   }, [results, sortKey]);
 
-  const toggleSave = (id: number) => {
-    setSavedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-  };
+  const toggleSave = (id: number) =>
+    setSavedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
-  const toggleCollegeType = (
-    type: "IIT" | "NIT" | "Deemed" | "State" | "Private",
-  ) => {
+  const toggleCollegeType = (type: "IIT" | "NIT" | "Deemed" | "State" | "Private") =>
     setInputs((prev) => ({
       ...prev,
       collegeTypes: prev.collegeTypes.includes(type)
         ? prev.collegeTypes.filter((t) => t !== type)
         : [...prev.collegeTypes, type],
     }));
-  };
 
-  const savedColleges = COLLEGES.filter((c) => savedIds.includes(c.id));
-  const top3Results = sortedResults?.slice(0, 3) ?? [];
+  const savedColleges  = COLLEGES.filter((c) => savedIds.includes(c.id));
+  const top3Results    = sortedResults?.slice(0, 3) ?? [];
 
-  // Chart data
-  const matchBarData =
-    sortedResults?.slice(0, 8).map((c) => ({
-      name: c.shortName,
-      score: c.matchScore,
-      fill: getMatchColor(c.matchScore),
-    })) ?? [];
+  const matchBarData = sortedResults?.slice(0, 8).map((c) => ({
+    name:  c.shortName,
+    score: c.matchScore,
+    fill:  getMatchColor(c.matchScore),
+  })) ?? [];
 
-  const packageBarData =
-    sortedResults?.slice(0, 8).map((c) => ({
-      name: c.shortName,
-      pkg: c.avgPackageLPA,
-    })) ?? [];
+  const packageBarData = sortedResults?.slice(0, 8).map((c) => ({
+    name: c.shortName,
+    pkg:  c.avgPackageLPA,
+  })) ?? [];
 
-  const trendData = top3Results.flatMap((c) =>
-    c.placementTrend.map((t) => ({ year: t.year, [c.shortName]: t.avgLPA })),
-  );
-  const trendYears = [...new Set(trendData.map((d) => d.year))].sort();
+  const trendYears    = [...new Set(top3Results.flatMap((c) => c.placementTrend.map((t) => t.year)))].sort();
   const trendChartData = trendYears.map((yr) => {
     const row: Record<string, number | string> = { year: yr };
     for (const c of top3Results) {
@@ -578,99 +465,141 @@ export function CollegeFinderPage({
     }
     return row;
   });
-  const trendColors = [
-    "oklch(0.78 0.15 85)",
-    "oklch(0.45 0.18 265)",
-    "oklch(0.55 0.18 145)",
-  ];
+  const trendColors = [T.gold, T.indigo, T.green];
+
+  /* ── Shared chart tooltip style ── */
+  const tooltipStyle = {
+    background:   T.heroBg,
+    border:       `1px solid oklch(1 0 0 / 0.12)`,
+    borderRadius: 10,
+    color:        "#fff",
+    fontSize:     12,
+  };
 
   return (
     <div className="min-h-screen bg-background font-body">
-      {/* ─── Hero Banner ──────────────────────────────────────────────────────── */}
-      <section className="relative bg-navy overflow-hidden pt-16">
-        {/* Grid pattern */}
-        <div className="absolute inset-0 grid-pattern opacity-40" />
-        {/* Radial glows */}
+
+      {/* ══════════════════════════════════════════
+          HERO BANNER
+      ══════════════════════════════════════════ */}
+      <section
+        className="relative overflow-hidden pt-16"
+        style={{ background: T.heroBg }}
+      >
+        {/* Dot-grid texture */}
         <div
-          className="absolute top-0 right-[15%] w-[480px] h-[480px] rounded-full pointer-events-none"
+          className="absolute inset-0"
           style={{
-            background:
-              "radial-gradient(ellipse, oklch(0.45 0.18 265 / 0.22) 0%, transparent 70%)",
+            backgroundImage: "radial-gradient(circle, oklch(1 0 0 / 0.18) 1px, transparent 1px)",
+            backgroundSize:  "28px 28px",
+            opacity:         0.55,
           }}
         />
+        {/* Indigo glow — top-right */}
+        <div
+          className="absolute top-0 right-[15%] w-[480px] h-[480px] rounded-full pointer-events-none"
+          style={{ background: `radial-gradient(ellipse, ${T.indigo}38 0%, transparent 70%)` }}
+        />
+        {/* Gold glow — bottom-left */}
         <div
           className="absolute bottom-0 left-[10%] w-[360px] h-[360px] rounded-full pointer-events-none"
+          style={{ background: `radial-gradient(ellipse, ${T.gold}26 0%, transparent 70%)` }}
+        />
+        {/* Decorative circle */}
+        <div
+          className="absolute pointer-events-none"
           style={{
-            background:
-              "radial-gradient(ellipse, oklch(0.78 0.15 85 / 0.15) 0%, transparent 70%)",
+            width: "520px", height: "520px", borderRadius: "50%",
+            right: "-100px", bottom: "-220px",
+            background: T.indigo, opacity: 0.04,
           }}
         />
 
-        <div className="relative z-10 container mx-auto px-4 pt-10 pb-12">
+        <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-14">
           {/* Breadcrumb */}
           <motion.nav
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="flex items-center gap-1.5 text-white/50 text-xs mb-8"
+            className="flex items-center gap-1.5 text-xs mb-8"
+            style={{ color: "oklch(1 0 0 / 0.50)" }}
           >
             <button
               type="button"
               data-ocid="finder.home_link"
               onClick={onNavigateHome}
-              className="flex items-center gap-1 hover:text-gold transition-colors"
+              className="flex items-center gap-1 hover:text-white transition-colors group"
             >
               <Home className="w-3 h-3" />
               Home
             </button>
             <ChevronRight className="w-3 h-3 opacity-40" />
-            <span className="text-gold font-semibold">
+            <span className="font-semibold" style={{ color: T.gold }}>
               Smart College Finder
             </span>
           </motion.nav>
 
           <div className="max-w-3xl">
+            {/* Eyebrow pill */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gold/15 border border-gold/30 mb-5"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5"
+              style={{
+                background: `${T.gold}1F`,
+                border:     `1px solid ${T.gold}40`,
+              }}
             >
-              <Sparkles className="w-3.5 h-3.5 text-gold" />
-              <span className="text-gold text-xs font-bold tracking-widest uppercase">
+              <Sparkles className="w-3.5 h-3.5" style={{ color: T.gold }} />
+              <span
+                className="text-xs font-bold tracking-widest uppercase"
+                style={{ color: T.gold }}
+              >
                 AI-Powered Matching
               </span>
             </motion.div>
 
+            {/* H1 */}
             <motion.h1
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.08 }}
-              className="heading-display text-4xl md:text-5xl lg:text-6xl text-white mb-4"
+              className="heading-display text-4xl md:text-5xl lg:text-6xl text-white mb-4 tracking-tight leading-[1.05]"
             >
-              Smart <span className="text-gradient-gold">College Finder</span>
+              Smart{" "}
+              <span
+                style={{
+                  background:           `linear-gradient(135deg, oklch(0.94 0.18 90), oklch(0.70 0.18 72))`,
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor:  "transparent",
+                  backgroundClip:       "text",
+                }}
+              >
+                College Finder
+              </span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.14 }}
-              className="text-white/70 text-base md:text-lg leading-relaxed mb-2 max-w-xl"
+              className="text-base md:text-lg leading-relaxed mb-2 max-w-xl"
+              style={{ color: "oklch(1 0 0 / 0.65)" }}
             >
-              Find the best colleges that match your academic performance and
-              preferences.
+              Find the best colleges that match your academic performance and preferences.
             </motion.p>
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.18 }}
-              className="text-white/50 text-sm leading-relaxed mb-8 max-w-lg"
+              className="text-sm leading-relaxed mb-9 max-w-lg"
+              style={{ color: "oklch(1 0 0 / 0.45)" }}
             >
-              Enter your details below and get personalized college
-              recommendations instantly.
+              Enter your details below and get personalized college recommendations instantly.
             </motion.p>
 
-            {/* Stats row */}
+            {/* Stats strip */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -679,15 +608,20 @@ export function CollegeFinderPage({
             >
               {[
                 { icon: BarChart3, label: "20+ Colleges Analyzed" },
-                { icon: Target, label: "7 Match Parameters" },
-                { icon: Zap, label: "Instant Results" },
+                { icon: Target,    label: "7 Match Parameters"    },
+                { icon: Zap,       label: "Instant Results"       },
               ].map(({ icon: Icon, label }) => (
                 <div
                   key={label}
-                  className="flex items-center gap-1.5 bg-white/8 border border-white/12 rounded-full px-3 py-1.5"
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-2"
+                  style={{
+                    background:     "oklch(1 0 0 / 0.055)",
+                    border:         "1px solid oklch(1 0 0 / 0.10)",
+                    backdropFilter: "blur(12px)",
+                  }}
                 >
-                  <Icon className="w-3.5 h-3.5 text-gold" />
-                  <span className="text-white/80 text-xs font-medium">
+                  <Icon className="w-3.5 h-3.5" style={{ color: T.gold }} />
+                  <span className="text-xs font-medium" style={{ color: "oklch(1 0 0 / 0.75)" }}>
                     {label}
                   </span>
                 </div>
@@ -697,42 +631,50 @@ export function CollegeFinderPage({
         </div>
       </section>
 
-      {/* ─── Input Form ───────────────────────────────────────────────────────── */}
-      <section className="bg-muted/30 py-10">
-        <div className="container mx-auto px-4">
+      {/* ══════════════════════════════════════════
+          INPUT FORM
+      ══════════════════════════════════════════ */}
+      <section className="py-10" style={{ background: T.surface }}>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="bg-white rounded-2xl shadow-card border border-border overflow-hidden"
+            className="rounded-2xl overflow-hidden"
+            style={{
+              background: T.white,
+              border:     `1px solid ${T.border}`,
+              boxShadow:  `0 8px 40px oklch(0.16 0.055 258 / 0.08), 0 2px 8px oklch(0 0 0 / 0.04)`,
+            }}
           >
             {/* Form header */}
-            <div className="px-6 pt-6 pb-4 border-b border-border flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-indigo/10 flex items-center justify-center flex-shrink-0">
-                <SlidersHorizontal
-                  className="w-4.5 h-4.5 text-indigo"
-                  style={{ width: 18, height: 18 }}
-                />
+            <div
+              className="px-6 pt-6 pb-4 flex items-center gap-3"
+              style={{ borderBottom: `1px solid ${T.border}` }}
+            >
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: T.indigoDim }}
+              >
+                <SlidersHorizontal className="w-[18px] h-[18px]" style={{ color: T.indigo }} />
               </div>
               <div>
-                <h2 className="font-heading font-bold text-navy text-lg">
+                <h2 className="font-heading font-bold text-lg" style={{ color: T.navy }}>
                   Your Preferences
                 </h2>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-xs" style={{ color: T.muted }}>
                   Fill in your details to get personalized recommendations
                 </p>
               </div>
             </div>
 
             <div className="p-6 space-y-8">
-              {/* Academic Details */}
+              {/* ── Academic Details ── */}
               <FormSection label="Academic Details">
                 <SliderField
                   label="TNEA Cutoff / Entrance Score"
                   value={inputs.cutoffScore}
-                  min={0}
-                  max={200}
-                  step={1}
+                  min={0} max={200} step={1}
                   format={(v) => `${v} / 200`}
                   onChange={(v) => update("cutoffScore", v)}
                   hint="Your TNEA cutoff marks or JEE/entrance exam score"
@@ -740,26 +682,14 @@ export function CollegeFinderPage({
                 <SliderField
                   label="Academic Percentage (%)"
                   value={inputs.academicPct}
-                  min={0}
-                  max={100}
-                  step={1}
+                  min={0} max={100} step={1}
                   format={(v) => `${v}%`}
                   onChange={(v) => update("academicPct", v)}
                 />
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold">Category</Label>
-                  <Select
-                    value={inputs.category}
-                    onValueChange={(v) =>
-                      update("category", v as FinderInputs["category"])
-                    }
-                  >
-                    <SelectTrigger
-                      data-ocid="finder.category_select"
-                      className="bg-background"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>Category</Label>
+                  <Select value={inputs.category} onValueChange={(v) => update("category", v as FinderInputs["category"])}>
+                    <SelectTrigger data-ocid="finder.category_select" className="bg-background"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="general">General</SelectItem>
                       <SelectItem value="obc">OBC</SelectItem>
@@ -770,12 +700,12 @@ export function CollegeFinderPage({
                 </div>
               </FormSection>
 
-              <div className="border-t border-border/60" />
+              <div className="border-t" style={{ borderColor: `${T.border}99` }} />
 
-              {/* Course Preference */}
+              {/* ── Course Preference ── */}
               <FormSection label="Course Preference">
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold">Degree Type</Label>
+                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>Degree Type</Label>
                   <Select
                     value={inputs.degreeType}
                     onValueChange={(v) => {
@@ -783,12 +713,7 @@ export function CollegeFinderPage({
                       update("specialization", "Any Specialization");
                     }}
                   >
-                    <SelectTrigger
-                      data-ocid="finder.degree_select"
-                      className="bg-background"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger data-ocid="finder.degree_select" className="bg-background"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="engineering">Engineering</SelectItem>
                       <SelectItem value="management">Management</SelectItem>
@@ -798,96 +723,55 @@ export function CollegeFinderPage({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold">
-                    Course Specialization
-                  </Label>
-                  <Select
-                    value={inputs.specialization}
-                    onValueChange={(v) => update("specialization", v)}
-                  >
-                    <SelectTrigger
-                      data-ocid="finder.specialization_select"
-                      className="bg-background"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>Course Specialization</Label>
+                  <Select value={inputs.specialization} onValueChange={(v) => update("specialization", v)}>
+                    <SelectTrigger data-ocid="finder.specialization_select" className="bg-background"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {specializations.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
+                      {specializations.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
               </FormSection>
 
-              <div className="border-t border-border/60" />
+              <div className="border-t" style={{ borderColor: `${T.border}99` }} />
 
-              {/* Location Preference */}
+              {/* ── Location Preference ── */}
               <FormSection label="Location Preference">
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold">
-                    Preferred State
-                  </Label>
+                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>Preferred State</Label>
                   <Select
                     value={inputs.preferredState}
-                    onValueChange={(v) => {
-                      update("preferredState", v);
-                      update("preferredCity", "Any City");
-                    }}
+                    onValueChange={(v) => { update("preferredState", v); update("preferredCity", "Any City"); }}
                   >
-                    <SelectTrigger
-                      data-ocid="finder.state_select"
-                      className="bg-background"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger data-ocid="finder.state_select" className="bg-background"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {STATES.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
+                      {STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold">
-                    Preferred City
-                  </Label>
+                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>Preferred City</Label>
                   <Select
                     value={inputs.preferredCity}
                     onValueChange={(v) => update("preferredCity", v)}
                     disabled={inputs.preferredState === "Any State"}
                   >
-                    <SelectTrigger
-                      data-ocid="finder.city_select"
-                      className="bg-background"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger data-ocid="finder.city_select" className="bg-background"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {cities.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
-                        </SelectItem>
-                      ))}
+                      {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
               </FormSection>
 
-              <div className="border-t border-border/60" />
+              <div className="border-t" style={{ borderColor: `${T.border}99` }} />
 
-              {/* Budget Preference */}
+              {/* ── Budget Preference ── */}
               <FormSection label="Budget Preference">
                 <SliderField
                   label="Maximum Annual Fee"
                   value={inputs.maxAnnualFee}
-                  min={50000}
-                  max={500000}
-                  step={10000}
+                  min={50000} max={500000} step={10000}
                   format={(v) => `₹${(v / 100000).toFixed(1)} L`}
                   onChange={(v) => update("maxAnnualFee", v)}
                   hint="Per year tuition fee limit"
@@ -897,58 +781,63 @@ export function CollegeFinderPage({
                     id="scholarship"
                     data-ocid="finder.scholarship_checkbox"
                     checked={inputs.scholarshipPreference}
-                    onCheckedChange={(v) =>
-                      update("scholarshipPreference", !!v)
-                    }
+                    onCheckedChange={(v) => update("scholarshipPreference", !!v)}
                   />
-                  <Label
-                    htmlFor="scholarship"
-                    className="text-sm cursor-pointer"
-                  >
+                  <Label htmlFor="scholarship" className="text-sm cursor-pointer" style={{ color: T.navy }}>
                     I prefer colleges offering scholarships
                   </Label>
                 </div>
               </FormSection>
 
-              <div className="border-t border-border/60" />
+              <div className="border-t" style={{ borderColor: `${T.border}99` }} />
 
-              {/* Additional Preferences */}
+              {/* ── Additional Preferences ── */}
               <FormSection label="Additional Preferences">
-                {/* College Type checkboxes */}
+                {/* College type toggles */}
                 <div className="sm:col-span-2 space-y-2">
-                  <Label className="text-sm font-semibold">
+                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>
                     College Type (select all that apply)
                   </Label>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {(
-                      ["IIT", "NIT", "Deemed", "State", "Private"] as const
-                    ).map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        data-ocid="finder.type_toggle"
-                        onClick={() => toggleCollegeType(type)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150 ${
-                          inputs.collegeTypes.includes(type)
-                            ? "bg-navy text-white border-navy shadow-sm"
-                            : "bg-background text-muted-foreground border-border hover:border-navy/40 hover:text-navy"
-                        }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
+                    {(["IIT","NIT","Deemed","State","Private"] as const).map((type) => {
+                      const active = inputs.collegeTypes.includes(type);
+                      return (
+                        <button
+                          key={type}
+                          type="button"
+                          data-ocid="finder.type_toggle"
+                          onClick={() => toggleCollegeType(type)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150"
+                          style={
+                            active
+                              ? { background: T.navy, color: T.white, borderColor: T.navy,
+                                  boxShadow: `0 2px 8px ${T.navy}40` }
+                              : { background: T.surface, color: T.muted, borderColor: T.border }
+                          }
+                          onMouseEnter={(e) => {
+                            if (!active) (e.currentTarget as HTMLElement).style.borderColor = `${T.navy}66`;
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!active) (e.currentTarget as HTMLElement).style.borderColor = T.border;
+                          }}
+                        >
+                          {type}
+                        </button>
+                      );
+                    })}
                     {inputs.collegeTypes.length > 0 && (
                       <button
                         type="button"
                         onClick={() => update("collegeTypes", [])}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-dashed border-muted-foreground/30 text-muted-foreground hover:text-foreground transition-colors"
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-dashed transition-colors"
+                        style={{ borderColor: `${T.muted}55`, color: T.muted }}
                       >
                         Clear
                       </button>
                     )}
                   </div>
                   {inputs.collegeTypes.length === 0 && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs" style={{ color: T.muted }}>
                       All types selected (leave blank for no preference)
                     </p>
                   )}
@@ -957,47 +846,34 @@ export function CollegeFinderPage({
                 <SliderField
                   label="Minimum Placement %"
                   value={inputs.minPlacementPct}
-                  min={0}
-                  max={100}
-                  step={5}
+                  min={0} max={100} step={5}
                   format={(v) => `${v}%`}
                   onChange={(v) => update("minPlacementPct", v)}
                 />
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold">
-                    NIRF Rank Range
-                  </Label>
-                  <Select
-                    value={inputs.nirfTopN}
-                    onValueChange={(v) =>
-                      update("nirfTopN", v as FinderInputs["nirfTopN"])
-                    }
-                  >
-                    <SelectTrigger
-                      data-ocid="finder.nirf_select"
-                      className="bg-background"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>NIRF Rank Range</Label>
+                  <Select value={inputs.nirfTopN} onValueChange={(v) => update("nirfTopN", v as FinderInputs["nirfTopN"])}>
+                    <SelectTrigger data-ocid="finder.nirf_select" className="bg-background"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {(
-                        ["any", "top10", "top25", "top50", "top100"] as const
-                      ).map((k) => (
-                        <SelectItem key={k} value={k}>
-                          {NIRF_TOP_N_LABELS[k]}
-                        </SelectItem>
+                      {(["any","top10","top25","top50","top100"] as const).map((k) => (
+                        <SelectItem key={k} value={k}>{NIRF_TOP_N_LABELS[k]}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="flex items-center justify-between bg-muted/40 border border-border rounded-xl px-4 py-3">
+                {/* Hostel switch */}
+                <div
+                  className="flex items-center justify-between rounded-xl px-4 py-3"
+                  style={{
+                    background: T.surface,
+                    border:     `1px solid ${T.border}`,
+                  }}
+                >
                   <div>
-                    <Label className="text-sm font-semibold">
-                      Hostel Required
-                    </Label>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <Label className="text-sm font-semibold" style={{ color: T.navy }}>Hostel Required</Label>
+                    <p className="text-xs mt-0.5" style={{ color: T.muted }}>
                       Only show colleges with hostel facilities
                     </p>
                   </div>
@@ -1011,12 +887,19 @@ export function CollegeFinderPage({
             </div>
 
             {/* Submit */}
-            <div className="px-6 py-5 bg-muted/20 border-t border-border">
+            <div
+              className="px-6 py-5"
+              style={{ background: `${T.surface}CC`, borderTop: `1px solid ${T.border}` }}
+            >
               <Button
                 data-ocid="finder.submit_button"
                 onClick={handleFind}
                 disabled={isAnalyzing}
-                className="w-full bg-gold text-navy hover:brightness-95 font-bold text-base py-6 rounded-xl shadow-sm transition-all"
+                className="w-full font-bold text-base py-6 rounded-xl shadow-sm transition-all"
+                style={{
+                  background: T.gold,
+                  color:      T.navy,
+                }}
                 size="lg"
               >
                 {isAnalyzing ? (
@@ -1036,7 +919,9 @@ export function CollegeFinderPage({
         </div>
       </section>
 
-      {/* ─── Results Section ──────────────────────────────────────────────────── */}
+      {/* ══════════════════════════════════════════
+          RESULTS
+      ══════════════════════════════════════════ */}
       <div ref={resultsRef} />
       <AnimatePresence mode="wait">
         {sortedResults !== null && (
@@ -1045,39 +930,37 @@ export function CollegeFinderPage({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="bg-muted/30 pb-10"
+            className="pb-10"
+            style={{ background: T.surface }}
           >
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
               {/* Results header */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45 }}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pt-4"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pt-6"
               >
                 <div className="flex items-center gap-3">
-                  <h2 className="font-heading font-bold text-navy text-xl md:text-2xl">
+                  <h2 className="font-heading font-bold text-xl md:text-2xl" style={{ color: T.navy }}>
                     Your Personalized Recommendations
                   </h2>
                   <Badge
-                    className="bg-indigo/10 text-indigo border border-indigo/25 font-bold"
                     data-ocid="finder.results_section"
+                    className="font-bold"
+                    style={{
+                      background: T.indigoDim,
+                      color:      T.indigo,
+                      border:     `1px solid ${T.indigo}33`,
+                    }}
                   >
                     {sortedResults.length} matches
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-sm whitespace-nowrap">
-                    Sort by:
-                  </span>
-                  <Select
-                    value={sortKey}
-                    onValueChange={(v) => setSortKey(v as SortKey)}
-                  >
-                    <SelectTrigger
-                      data-ocid="finder.sort_select"
-                      className="w-[170px] bg-white text-sm h-9"
-                    >
+                  <span className="text-sm whitespace-nowrap" style={{ color: T.muted }}>Sort by:</span>
+                  <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+                    <SelectTrigger data-ocid="finder.sort_select" className="w-[170px] bg-white text-sm h-9">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1098,23 +981,24 @@ export function CollegeFinderPage({
                   className="text-center py-20"
                   data-ocid="finder.empty_state"
                 >
-                  <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-5">
-                    <Search className="w-10 h-10 text-muted-foreground/40" />
+                  <div
+                    className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-5"
+                    style={{ background: T.indigoDim }}
+                  >
+                    <Search className="w-10 h-10" style={{ color: `${T.indigo}66` }} />
                   </div>
-                  <h3 className="font-heading font-bold text-navy text-xl mb-2">
+                  <h3 className="font-heading font-bold text-xl mb-2" style={{ color: T.navy }}>
                     No Matches Found
                   </h3>
-                  <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto">
-                    Try adjusting your filters — lower the minimum placement %,
-                    increase the budget, or select "Any State" for location.
+                  <p className="text-sm mb-6 max-w-sm mx-auto" style={{ color: T.muted }}>
+                    Try adjusting your filters — lower the minimum placement %, increase the budget, or select "Any State" for location.
                   </p>
                   <Button
                     data-ocid="finder.adjust_filters_button"
                     variant="outline"
-                    className="border-2 border-navy text-navy hover:bg-navy/5 font-semibold"
-                    onClick={() =>
-                      window.scrollTo({ top: 0, behavior: "smooth" })
-                    }
+                    className="border-2 font-semibold"
+                    style={{ borderColor: T.navy, color: T.navy }}
+                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                   >
                     Adjust Filters
                   </Button>
@@ -1126,7 +1010,8 @@ export function CollegeFinderPage({
                 >
                   {sortedResults.map((college, idx) => {
                     const medalStyle = getRankMedalStyle(idx + 1);
-                    const isSaved = savedIds.includes(college.id);
+                    const isSaved    = savedIds.includes(college.id);
+
                     return (
                       <motion.article
                         key={college.id}
@@ -1134,150 +1019,148 @@ export function CollegeFinderPage({
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: idx * 0.05 }}
-                        className="bg-white border border-border rounded-xl overflow-hidden shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200 group flex flex-col"
+                        className="rounded-2xl overflow-hidden flex flex-col transition-all duration-200 group"
+                        style={{
+                          background: T.white,
+                          border:     `1px solid ${T.border}`,
+                          boxShadow:  `0 2px 12px oklch(0.16 0.055 258 / 0.05)`,
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 32px oklch(0.16 0.055 258 / 0.10)`;
+                          (e.currentTarget as HTMLElement).style.transform  = "translateY(-2px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLElement).style.boxShadow = `0 2px 12px oklch(0.16 0.055 258 / 0.05)`;
+                          (e.currentTarget as HTMLElement).style.transform  = "translateY(0)";
+                        }}
                       >
-                        {/* Card top */}
+                        {/* Card body */}
                         <div className="p-5 pb-4 flex-1">
                           <div className="flex items-start gap-3 mb-3">
                             {/* Rank medal */}
                             <div
-                              className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                              className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0"
                               style={{
                                 background: medalStyle.bg,
-                                color: medalStyle.text,
-                                boxShadow: medalStyle.shadow,
+                                color:      medalStyle.text,
+                                boxShadow:  medalStyle.shadow,
                               }}
                             >
-                              {idx < 3
-                                ? ["🥇", "🥈", "🥉"][idx]
-                                : `#${idx + 1}`}
+                              {idx < 3 ? ["🥇","🥈","🥉"][idx] : `#${idx + 1}`}
                             </div>
+
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-heading font-bold text-navy text-sm leading-tight line-clamp-2 group-hover:text-indigo transition-colors">
+                              <h3
+                                className="font-heading font-bold text-sm leading-tight line-clamp-2 transition-colors group-hover:text-[oklch(0.46_0.19_266)]"
+                                style={{ color: T.navy }}
+                              >
                                 {college.name}
                               </h3>
                               <div className="flex flex-wrap gap-1 mt-1.5">
-                                <span
-                                  className={`text-[10px] px-2 py-0.5 rounded-full ${getTypeBadgeStyle(college.type)}`}
-                                >
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full ${getTypeBadgeStyle(college.type)}`}>
                                   {college.type}
                                 </span>
-                                <span
-                                  className={`text-[10px] px-2 py-0.5 rounded-full ${getNaacBadgeStyle(college.naacGrade)}`}
-                                >
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full ${getNaacBadgeStyle(college.naacGrade)}`}>
                                   NAAC {college.naacGrade}
                                 </span>
                               </div>
                             </div>
+
                             {/* Bookmark */}
                             <button
                               type="button"
                               data-ocid={`finder.toggle.${idx + 1}`}
                               onClick={() => toggleSave(college.id)}
-                              className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                              className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                              style={
                                 isSaved
-                                  ? "bg-gold/15 text-gold hover:bg-gold/25"
-                                  : "bg-muted text-muted-foreground hover:bg-muted hover:text-foreground"
-                              }`}
-                              title={
-                                isSaved
-                                  ? "Remove from shortlist"
-                                  : "Add to shortlist"
+                                  ? { background: `${T.gold}22`, color: T.goldText }
+                                  : { background: T.surface, color: T.muted }
                               }
+                              onMouseEnter={(e) => {
+                                if (!isSaved) (e.currentTarget as HTMLElement).style.color = T.navy;
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isSaved) (e.currentTarget as HTMLElement).style.color = T.muted;
+                              }}
+                              title={isSaved ? "Remove from shortlist" : "Add to shortlist"}
                             >
-                              {isSaved ? (
-                                <BookmarkCheck className="w-4 h-4" />
-                              ) : (
-                                <Bookmark className="w-4 h-4" />
-                              )}
+                              {isSaved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
                             </button>
                           </div>
 
                           {/* Location */}
-                          <div className="flex items-center gap-1 text-muted-foreground text-xs mb-4">
-                            <MapPin className="w-3 h-3" />
+                          <div className="flex items-center gap-1 text-xs mb-4" style={{ color: T.muted }}>
+                            <MapPin className="w-3 h-3" style={{ color: T.gold }} />
                             {college.city}, {college.state}
                           </div>
 
                           {/* Match score + stats */}
                           <div className="flex items-center gap-4 mb-4">
-                            <div className="relative">
-                              <MatchScoreRing
-                                score={college.matchScore}
-                                size={68}
-                              />
+                            <div className="relative shrink-0">
+                              <MatchScoreRing score={college.matchScore} size={68} />
                               <div
                                 className="absolute -bottom-1 -right-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
                                 style={{
                                   background: `${getMatchColor(college.matchScore)}22`,
-                                  color: getMatchColor(college.matchScore),
-                                  border: `1px solid ${getMatchColor(college.matchScore)}44`,
+                                  color:      getMatchColor(college.matchScore),
+                                  border:     `1px solid ${getMatchColor(college.matchScore)}44`,
                                 }}
                               >
                                 {getMatchLabel(college.matchScore)}
                               </div>
                             </div>
                             <div className="flex-1 grid grid-cols-2 gap-y-2 gap-x-3">
-                              <div>
-                                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                                  Avg Pkg
+                              {[
+                                { label: "Avg Pkg",    value: `₹${college.avgPackageLPA}L`                    },
+                                { label: "Placement",  value: `${college.placementPct}%`                       },
+                                { label: "Annual Fee", value: `₹${college.feeRange.min}K–${college.feeRange.max}K` },
+                                { label: "NIRF Rank",  value: `#${college.nirfRank}`                           },
+                              ].map(({ label, value }) => (
+                                <div key={label}>
+                                  <div className="text-[10px] uppercase tracking-wide" style={{ color: T.muted }}>{label}</div>
+                                  <div className="font-bold text-sm" style={{ color: T.navy }}>{value}</div>
                                 </div>
-                                <div className="font-bold text-navy text-sm">
-                                  ₹{college.avgPackageLPA}L
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                                  Placement
-                                </div>
-                                <div className="font-bold text-navy text-sm">
-                                  {college.placementPct}%
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                                  Annual Fee
-                                </div>
-                                <div className="font-bold text-navy text-sm">
-                                  ₹{college.feeRange.min}K–
-                                  {college.feeRange.max}K
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                                  NIRF Rank
-                                </div>
-                                <div className="font-bold text-navy text-sm">
-                                  #{college.nirfRank}
-                                </div>
-                              </div>
+                              ))}
                             </div>
                           </div>
 
-                          {/* Courses chips */}
+                          {/* Course chips */}
                           <div className="flex flex-wrap gap-1 mb-4">
                             {college.courses.slice(0, 3).map((c) => (
                               <span
                                 key={c}
-                                className="text-[10px] px-2 py-0.5 bg-muted/60 text-muted-foreground rounded-full border border-border"
+                                className="text-[10px] px-2 py-0.5 rounded-full"
+                                style={{
+                                  background: T.surface,
+                                  color:      T.muted,
+                                  border:     `1px solid ${T.border}`,
+                                }}
                               >
                                 {c}
                               </span>
                             ))}
                             {college.courses.length > 3 && (
-                              <span className="text-[10px] px-2 py-0.5 bg-muted/40 text-muted-foreground/70 rounded-full border border-border border-dashed">
+                              <span
+                                className="text-[10px] px-2 py-0.5 rounded-full border border-dashed"
+                                style={{ color: `${T.muted}AA`, borderColor: `${T.border}AA` }}
+                              >
                                 +{college.courses.length - 3} more
                               </span>
                             )}
                           </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="px-4 pb-4 pt-3 border-t border-border/60 flex gap-2">
+                        {/* Card actions */}
+                        <div
+                          className="px-4 pb-4 pt-3 flex gap-2"
+                          style={{ borderTop: `1px solid ${T.border}99` }}
+                        >
                           <Button
                             data-ocid={`finder.primary_button.${idx + 1}`}
                             size="sm"
-                            className="flex-1 bg-indigo text-white hover:bg-indigo/90 text-xs font-semibold"
+                            className="flex-1 text-xs font-semibold text-white"
+                            style={{ background: T.indigo }}
                             onClick={() => onNavigateToDetails(college.id)}
                           >
                             View Details
@@ -1286,7 +1169,8 @@ export function CollegeFinderPage({
                             data-ocid={`finder.secondary_button.${idx + 1}`}
                             size="sm"
                             variant="outline"
-                            className="flex-1 border-navy/30 text-navy hover:bg-navy/5 text-xs font-semibold"
+                            className="flex-1 text-xs font-semibold"
+                            style={{ borderColor: `${T.navy}44`, color: T.navy }}
                             onClick={() => onNavigateToCompare([college.id])}
                           >
                             <GitCompare className="w-3 h-3 mr-1" />
@@ -1303,7 +1187,9 @@ export function CollegeFinderPage({
         )}
       </AnimatePresence>
 
-      {/* ─── Visual Insights Section ──────────────────────────────────────────── */}
+      {/* ══════════════════════════════════════════
+          VISUAL INSIGHTS
+      ══════════════════════════════════════════ */}
       <AnimatePresence>
         {sortedResults && sortedResults.length >= 3 && (
           <motion.section
@@ -1311,178 +1197,116 @@ export function CollegeFinderPage({
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="bg-navy py-14"
+            className="py-14"
+            style={{ background: T.heroBg }}
           >
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              {/* Section header */}
               <div className="text-center mb-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gold/15 border border-gold/25 mb-4">
-                  <TrendingUp className="w-3.5 h-3.5 text-gold" />
-                  <span className="text-gold text-xs font-bold tracking-widest uppercase">
+                <div
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4"
+                  style={{ background: `${T.gold}1F`, border: `1px solid ${T.gold}33` }}
+                >
+                  <TrendingUp className="w-3.5 h-3.5" style={{ color: T.gold }} />
+                  <span className="text-xs font-bold tracking-widest uppercase" style={{ color: T.gold }}>
                     Visual Analytics
                   </span>
                 </div>
                 <h2 className="heading-display text-2xl md:text-3xl text-white mb-2">
                   Visual Insights for Your Recommendations
                 </h2>
-                <p className="text-white/50 text-sm">
+                <p className="text-sm" style={{ color: "oklch(1 0 0 / 0.45)" }}>
                   Comparing top matched colleges across key metrics
                 </p>
               </div>
 
+              {/* Chart grid */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Chart 1: Match Score Bar */}
+                {/* ── Chart 1: Match Score ── */}
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.1 }}
-                  className="bg-white/6 border border-white/10 rounded-2xl p-5"
+                  transition={{ duration: 0.4, delay: 0.10 }}
                   data-ocid="finder.chart_point"
+                  className="rounded-2xl p-5"
+                  style={{
+                    background: "oklch(1 0 0 / 0.055)",
+                    border:     "1px solid oklch(1 0 0 / 0.10)",
+                  }}
                 >
-                  <h3 className="font-heading font-bold text-white text-sm mb-1">
-                    Admission Probability
-                  </h3>
-                  <p className="text-white/40 text-xs mb-4">
-                    Match score by college
-                  </p>
+                  <h3 className="font-heading font-bold text-white text-sm mb-1">Admission Probability</h3>
+                  <p className="text-xs mb-4" style={{ color: "oklch(1 0 0 / 0.40)" }}>Match score by college</p>
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart
-                      data={matchBarData}
-                      layout="vertical"
-                      margin={{ left: 0, right: 16, top: 4, bottom: 4 }}
-                    >
-                      <XAxis
-                        type="number"
-                        domain={[0, 100]}
-                        tick={{ fill: "oklch(1 0 0 / 0.35)", fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="name"
-                        tick={{ fill: "oklch(1 0 0 / 0.55)", fontSize: 10 }}
-                        width={72}
-                        tickLine={false}
-                        axisLine={false}
-                      />
+                    <BarChart data={matchBarData} layout="vertical" margin={{ left: 0, right: 16, top: 4, bottom: 4 }}>
+                      <XAxis type="number" domain={[0, 100]}
+                        tick={{ fill: "oklch(1 0 0 / 0.35)", fontSize: 10 }} tickLine={false} axisLine={false} />
+                      <YAxis type="category" dataKey="name" width={72}
+                        tick={{ fill: "oklch(1 0 0 / 0.55)", fontSize: 10 }} tickLine={false} axisLine={false} />
                       <Tooltip
-                        formatter={(v) => `₹${(v as number) ?? 0}%`}
-                        contentStyle={{
-                          background: "oklch(0.18 0.05 255)",
-                          border: "1px solid oklch(1 0 0 / 0.12)",
-                          borderRadius: 8,
-                          color: "#fff",
-                          fontSize: 12,
-                        }}
+                        formatter={(v) => [`${v}%`, "Match"]}
+                        contentStyle={tooltipStyle}
                       />
                       <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                        {matchBarData.map((entry) => (
-                          <Cell key={entry.name} fill={entry.fill} />
-                        ))}
+                        {matchBarData.map((entry) => <Cell key={entry.name} fill={entry.fill} />)}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </motion.div>
 
-                {/* Chart 2: Package Bar */}
+                {/* ── Chart 2: Package ── */}
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.18 }}
-                  className="bg-white/6 border border-white/10 rounded-2xl p-5"
                   data-ocid="finder.chart_point"
+                  className="rounded-2xl p-5"
+                  style={{
+                    background: "oklch(1 0 0 / 0.055)",
+                    border:     "1px solid oklch(1 0 0 / 0.10)",
+                  }}
                 >
-                  <h3 className="font-heading font-bold text-white text-sm mb-1">
-                    Average Package (LPA)
-                  </h3>
-                  <p className="text-white/40 text-xs mb-4">
-                    Top matched colleges
-                  </p>
+                  <h3 className="font-heading font-bold text-white text-sm mb-1">Average Package (LPA)</h3>
+                  <p className="text-xs mb-4" style={{ color: "oklch(1 0 0 / 0.40)" }}>Top matched colleges</p>
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart
-                      data={packageBarData}
-                      margin={{ left: 0, right: 8, top: 4, bottom: 30 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="oklch(1 0 0 / 0.06)"
-                      />
-                      <XAxis
-                        dataKey="name"
-                        tick={{ fill: "oklch(1 0 0 / 0.45)", fontSize: 9 }}
-                        tickLine={false}
-                        axisLine={false}
-                        angle={-35}
-                        textAnchor="end"
-                        interval={0}
-                      />
-                      <YAxis
-                        tick={{ fill: "oklch(1 0 0 / 0.35)", fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
+                    <BarChart data={packageBarData} margin={{ left: 0, right: 8, top: 4, bottom: 30 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 0.06)" />
+                      <XAxis dataKey="name" angle={-35} textAnchor="end" interval={0}
+                        tick={{ fill: "oklch(1 0 0 / 0.45)", fontSize: 9 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fill: "oklch(1 0 0 / 0.35)", fontSize: 10 }} tickLine={false} axisLine={false} />
                       <Tooltip
-                        formatter={(v) => `₹${(v as number) ?? 0} LPA`}
-                        contentStyle={{
-                          background: "oklch(0.18 0.05 255)",
-                          border: "1px solid oklch(1 0 0 / 0.12)",
-                          borderRadius: 8,
-                          color: "#fff",
-                          fontSize: 12,
-                        }}
+                        formatter={(v) => [`₹${v} LPA`, "Avg Package"]}
+                        contentStyle={tooltipStyle}
                       />
-                      <Bar
-                        dataKey="pkg"
-                        fill="oklch(0.45 0.18 265)"
-                        radius={[4, 4, 0, 0]}
-                      />
+                      <Bar dataKey="pkg" fill={T.indigo} radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </motion.div>
 
-                {/* Chart 3: Placement Trend */}
+                {/* ── Chart 3: Placement Trend ── */}
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.26 }}
-                  className="bg-white/6 border border-white/10 rounded-2xl p-5"
                   data-ocid="finder.chart_point"
+                  className="rounded-2xl p-5"
+                  style={{
+                    background: "oklch(1 0 0 / 0.055)",
+                    border:     "1px solid oklch(1 0 0 / 0.10)",
+                  }}
                 >
-                  <h3 className="font-heading font-bold text-white text-sm mb-1">
-                    Placement Trend
-                  </h3>
-                  <p className="text-white/40 text-xs mb-4">
+                  <h3 className="font-heading font-bold text-white text-sm mb-1">Placement Trend</h3>
+                  <p className="text-xs mb-4" style={{ color: "oklch(1 0 0 / 0.40)" }}>
                     Avg LPA – top 3 matches (2020–2024)
                   </p>
                   <ResponsiveContainer width="100%" height={200}>
-                    <LineChart
-                      data={trendChartData}
-                      margin={{ left: 0, right: 8, top: 4, bottom: 4 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="oklch(1 0 0 / 0.06)"
-                      />
-                      <XAxis
-                        dataKey="year"
-                        tick={{ fill: "oklch(1 0 0 / 0.45)", fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis
-                        tick={{ fill: "oklch(1 0 0 / 0.35)", fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
+                    <LineChart data={trendChartData} margin={{ left: 0, right: 8, top: 4, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 0.06)" />
+                      <XAxis dataKey="year"
+                        tick={{ fill: "oklch(1 0 0 / 0.45)", fontSize: 10 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fill: "oklch(1 0 0 / 0.35)", fontSize: 10 }} tickLine={false} axisLine={false} />
                       <Tooltip
-                        formatter={(v) => `₹${(v as number) ?? 0} LPA`}
-                        contentStyle={{
-                          background: "oklch(0.18 0.05 255)",
-                          border: "1px solid oklch(1 0 0 / 0.12)",
-                          borderRadius: 8,
-                          color: "#fff",
-                          fontSize: 12,
-                        }}
+                        formatter={(v) => [`₹${v} LPA`, ""]}
+                        contentStyle={tooltipStyle}
                       />
                       {top3Results.map((c, i) => (
                         <Line
@@ -1501,11 +1325,8 @@ export function CollegeFinderPage({
                   <div className="flex flex-wrap gap-3 mt-3">
                     {top3Results.map((c, i) => (
                       <div key={c.id} className="flex items-center gap-1.5">
-                        <div
-                          className="w-2.5 h-2.5 rounded-full"
-                          style={{ background: trendColors[i] }}
-                        />
-                        <span className="text-white/50 text-[10px]">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: trendColors[i] }} />
+                        <span className="text-[10px]" style={{ color: "oklch(1 0 0 / 0.50)" }}>
                           {c.shortName}
                         </span>
                       </div>
@@ -1518,24 +1339,36 @@ export function CollegeFinderPage({
         )}
       </AnimatePresence>
 
-      {/* ─── Footer Attribution ───────────────────────────────────────────────── */}
-      <section className="bg-muted/30 border-t border-border py-8">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-muted-foreground text-sm">
+      {/* ══════════════════════════════════════════
+          FOOTER
+      ══════════════════════════════════════════ */}
+      <footer
+        className="py-8"
+        style={{ background: T.surface, borderTop: `1px solid ${T.border}` }}
+      >
+        <div className="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm" style={{ color: T.muted }}>
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" style={{ color: T.indigo }} />
+            <span>College Ranking Analytics Platform</span>
+          </div>
+          <p>
             © {new Date().getFullYear()}. Built with ❤️ using{" "}
             <a
               href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-indigo hover:text-navy transition-colors font-medium"
+              className="font-semibold hover:underline"
+              style={{ color: T.indigo }}
             >
               caffeine.ai
             </a>
           </p>
         </div>
-      </section>
+      </footer>
 
-      {/* ─── Floating Shortlist Button ────────────────────────────────────────── */}
+      {/* ══════════════════════════════════════════
+          FLOATING SHORTLIST BUTTON
+      ══════════════════════════════════════════ */}
       <AnimatePresence>
         {savedIds.length > 0 && (
           <motion.div
@@ -1550,7 +1383,12 @@ export function CollegeFinderPage({
               type="button"
               data-ocid="finder.shortlist_button"
               onClick={() => setShortlistOpen(true)}
-              className="flex items-center gap-2 bg-gold text-navy font-bold text-sm px-4 py-3 rounded-2xl shadow-[0_4px_24px_oklch(0.78_0.15_85/0.45)] hover:brightness-95 transition-all"
+              className="flex items-center gap-2 font-bold text-sm px-4 py-3 rounded-2xl transition-all hover:brightness-95"
+              style={{
+                background: T.gold,
+                color:      T.navy,
+                boxShadow:  `0 4px 24px ${T.gold}70`,
+              }}
             >
               <BookmarkCheck className="w-4 h-4" />
               Shortlist ({savedIds.length})
@@ -1559,7 +1397,9 @@ export function CollegeFinderPage({
         )}
       </AnimatePresence>
 
-      {/* ─── Shortlist Drawer ─────────────────────────────────────────────────── */}
+      {/* ══════════════════════════════════════════
+          SHORTLIST DRAWER
+      ══════════════════════════════════════════ */}
       <AnimatePresence>
         {shortlistOpen && (
           <>
@@ -1578,15 +1418,30 @@ export function CollegeFinderPage({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 320, damping: 30 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-[0_-8px_40px_oklch(0.22_0.06_255/0.25)] max-h-[70vh] flex flex-col"
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl max-h-[70vh] flex flex-col"
+              style={{
+                background: T.white,
+                boxShadow:  `0 -8px 40px oklch(0.16 0.055 258 / 0.25)`,
+              }}
             >
-              <div className="flex items-center justify-between p-4 border-b border-border">
+              {/* Drawer header */}
+              <div
+                className="flex items-center justify-between p-4"
+                style={{ borderBottom: `1px solid ${T.border}` }}
+              >
                 <div className="flex items-center gap-2">
-                  <BookmarkCheck className="w-5 h-5 text-gold" />
-                  <h3 className="font-heading font-bold text-navy text-base">
+                  <BookmarkCheck className="w-5 h-5" style={{ color: T.gold }} />
+                  <h3 className="font-heading font-bold text-base" style={{ color: T.navy }}>
                     Shortlisted Colleges
                   </h3>
-                  <Badge className="bg-gold/15 text-[oklch(0.48_0.15_75)] border border-gold/35 font-bold">
+                  <Badge
+                    className="font-bold"
+                    style={{
+                      background: `${T.gold}22`,
+                      color:      T.goldText,
+                      border:     `1px solid ${T.gold}44`,
+                    }}
+                  >
                     {savedIds.length}
                   </Badge>
                 </div>
@@ -1594,24 +1449,33 @@ export function CollegeFinderPage({
                   type="button"
                   data-ocid="finder.close_button"
                   onClick={() => setShortlistOpen(false)}
-                  className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                  className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                  style={{ background: T.surface, color: T.muted }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = T.navy; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = T.muted; }}
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* Drawer list */}
               <div className="overflow-y-auto flex-1 p-4 space-y-3">
                 {savedColleges.map((c, idx) => (
                   <div
                     key={c.id}
                     data-ocid={`finder.shortlist.item.${idx + 1}`}
-                    className="flex items-center gap-3 bg-muted/40 rounded-xl px-4 py-3 border border-border"
+                    className="flex items-center gap-3 rounded-xl px-4 py-3"
+                    style={{
+                      background: T.surface,
+                      border:     `1px solid ${T.border}`,
+                    }}
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="font-heading font-bold text-navy text-sm truncate">
+                      <div className="font-heading font-bold text-sm truncate" style={{ color: T.navy }}>
                         {c.name}
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                        <MapPin className="w-3 h-3" />
+                      <div className="flex items-center gap-1 text-xs mt-0.5" style={{ color: T.muted }}>
+                        <MapPin className="w-3 h-3" style={{ color: T.gold }} />
                         {c.city} · NIRF #{c.nirfRank}
                       </div>
                     </div>
@@ -1619,28 +1483,31 @@ export function CollegeFinderPage({
                       type="button"
                       data-ocid={`finder.delete_button.${idx + 1}`}
                       onClick={() => toggleSave(c.id)}
-                      className="w-7 h-7 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive/20 transition-colors flex-shrink-0"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+                      style={{ background: `${T.red}14`, color: T.red }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = `${T.red}28`; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = `${T.red}14`; }}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
               </div>
-              <div className="p-4 border-t border-border">
+
+              {/* Drawer footer */}
+              <div className="p-4" style={{ borderTop: `1px solid ${T.border}` }}>
                 <Button
                   data-ocid="finder.compare_shortlist_button"
-                  className="w-full bg-indigo text-white hover:bg-indigo/90 font-bold"
-                  onClick={() => {
-                    setShortlistOpen(false);
-                    onNavigateToCompare(savedIds);
-                  }}
+                  className="w-full font-bold text-white"
+                  style={{ background: T.indigo }}
+                  onClick={() => { setShortlistOpen(false); onNavigateToCompare(savedIds); }}
                   disabled={savedIds.length < 2}
                 >
                   <GitCompare className="w-4 h-4 mr-2" />
                   Compare Shortlist ({savedIds.length})
                 </Button>
                 {savedIds.length < 2 && (
-                  <p className="text-center text-xs text-muted-foreground mt-2">
+                  <p className="text-center text-xs mt-2" style={{ color: T.muted }}>
                     Add at least 2 colleges to compare
                   </p>
                 )}
@@ -1650,13 +1517,9 @@ export function CollegeFinderPage({
         )}
       </AnimatePresence>
 
-      {/* Back to top nav button */}
+      {/* Hidden nav button (preserved) */}
       <div className="hidden">
-        <button
-          type="button"
-          data-ocid="finder.home_link"
-          onClick={onNavigateHome}
-        >
+        <button type="button" data-ocid="finder.home_link" onClick={onNavigateHome}>
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
       </div>

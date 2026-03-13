@@ -1,4 +1,4 @@
-import { Button } from "../components/ui/button";
+import { Button } from "../ui/button";
 import { BarChart3, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 

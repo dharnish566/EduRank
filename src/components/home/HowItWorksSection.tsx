@@ -1,4 +1,4 @@
-import { useScrollAnimation } from "../hooks/useScrollAnimation";
+import { useScrollAnimation } from "../../hooks/useScrollAnimation";
 import { Cpu, Database, Globe, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -39,8 +39,10 @@ export function HowItWorksSection() {
   const { ref, isVisible } = useScrollAnimation();
 
   return (
-    <section className="py-20 bg-white relative overflow-hidden">
-      {/* Grid pattern overlay */}
+    // FIXED: "bg-white" → explicit cool off-white matching the page's navy-tinted background tone
+    <section className="py-20 relative overflow-hidden" style={{ background: "oklch(0.97 0.012 258)" }}>
+
+      {/* Grid pattern overlay — kept identical */}
       <div className="absolute inset-0 grid-pattern opacity-30" />
 
       <div
@@ -49,13 +51,40 @@ export function HowItWorksSection() {
       >
         {/* Header */}
         <div className="text-center mb-16">
-          <div className="eyebrow-tag text-navy/60 mb-4 justify-center">
+          {/* FIXED: "text-navy/60" + "justify-center" (undefined token) → explicit style */}
+          <div
+            className="eyebrow-tag mb-4"
+            style={{
+              display: "inline-flex",
+              justifyContent: "center",
+              color: "oklch(0.22 0.08 258 / 0.65)",
+              background: "oklch(0.22 0.08 258 / 0.07)",
+              border: "1px solid oklch(0.22 0.08 258 / 0.18)",
+            }}
+          >
             Process
           </div>
-          <h2 className="heading-display text-4xl md:text-5xl lg:text-6xl text-navy mb-4">
-            How It <span className="text-gradient-primary">Works</span>
+
+          {/* FIXED: "text-navy" → explicit; "text-gradient-primary" → explicit indigo→gold gradient */}
+          <h2
+            className="heading-display text-4xl md:text-5xl lg:text-6xl mb-4"
+            style={{ color: "oklch(0.18 0.07 258)" }}
+          >
+            How It{" "}
+            <span
+              style={{
+                background: "linear-gradient(135deg, oklch(0.55 0.18 265) 0%, oklch(0.78 0.15 85) 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Works
+            </span>
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto text-base md:text-lg">
+
+          {/* FIXED: "text-muted-foreground" → explicit muted navy-grey */}
+          <p className="max-w-xl mx-auto text-base md:text-lg" style={{ color: "oklch(0.52 0.04 258)" }}>
             From raw official data to actionable college insights — in four
             structured steps.
           </p>
@@ -63,10 +92,9 @@ export function HowItWorksSection() {
 
         {/* Steps */}
         <div className="relative">
-          {/* Connector line — desktop */}
+          {/* Connector line — desktop — kept identical */}
           <div className="hidden md:block absolute top-16 left-[12.5%] right-[12.5%] h-0.5 z-0">
             <div className="w-full h-full bg-gradient-to-r from-transparent via-indigo/40 to-transparent" />
-            {/* Dashed animated line */}
             <svg
               className="absolute inset-0 w-full h-full"
               xmlns="http://www.w3.org/2000/svg"
@@ -99,22 +127,50 @@ export function HowItWorksSection() {
                   transition: `all 0.6s ease ${i * 120}ms`,
                 }}
               >
-                {/* Step number circle */}
+                {/* Step icon circle */}
                 <div className="relative mb-5">
-                  <div className="w-16 h-16 rounded-full bg-navy flex items-center justify-center shadow-card-hover">
+                  {/* FIXED: "bg-navy" (undefined token) → explicit navy gradient;
+                      "shadow-card-hover" (undefined token) → explicit shadow */}
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center"
+                    style={{
+                      background: "linear-gradient(135deg, oklch(0.14 0.07 258) 0%, oklch(0.22 0.08 258) 100%)",
+                      boxShadow: "0 6px 20px oklch(0.16 0.07 258 / 0.30)",
+                    }}
+                  >
                     <step.icon className="w-7 h-7 text-white" />
                   </div>
-                  <div className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-gold flex items-center justify-center">
-                    <span className="text-[oklch(0.16_0.05_255)] text-xs font-black font-heading">
+
+                  {/* FIXED: "bg-gold" (undefined token) → explicit gold matching HeroSection */}
+                  <div
+                    className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center"
+                    style={{
+                      background: "oklch(0.78 0.15 85)",
+                      boxShadow: "0 2px 8px oklch(0.78 0.15 85 / 0.40)",
+                    }}
+                  >
+                    <span
+                      className="text-xs font-black font-heading"
+                      style={{ color: "oklch(0.16 0.05 255)" }}
+                    >
                       {i + 1}
                     </span>
                   </div>
                 </div>
 
-                <h3 className="font-heading text-lg font-bold text-navy mb-2">
+                {/* FIXED: "text-navy" → explicit */}
+                <h3
+                  className="font-heading text-lg font-bold mb-2"
+                  style={{ color: "oklch(0.18 0.07 258)" }}
+                >
                   {step.title}
                 </h3>
-                <p className="text-muted-foreground text-sm leading-relaxed max-w-[200px] mx-auto">
+
+                {/* FIXED: "text-muted-foreground" → explicit */}
+                <p
+                  className="text-sm leading-relaxed max-w-[200px] mx-auto"
+                  style={{ color: "oklch(0.52 0.04 258)" }}
+                >
                   {step.description}
                 </p>
               </div>

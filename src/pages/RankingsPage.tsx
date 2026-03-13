@@ -44,28 +44,28 @@ type SortKey = "overallScore" | "nirfRank" | "placementPct" | "avgPackageLPA";
 function getTypeBadgeStyle(type: College["type"]) {
   switch (type) {
     case "IIT":
-      return "bg-[oklch(0.45_0.18_265/0.15)] text-[oklch(0.30_0.18_265)] border border-[oklch(0.45_0.18_265/0.35)]";
+      return "bg-[oklch(0.46_0.19_266/0.12)] text-[oklch(0.30_0.18_266)] border border-[oklch(0.46_0.19_266/0.35)]";
     case "NIT":
-      return "bg-[oklch(0.55_0.18_165/0.15)] text-[oklch(0.32_0.18_165)] border border-[oklch(0.55_0.18_165/0.35)]";
+      return "bg-[oklch(0.52_0.18_148/0.12)] text-[oklch(0.28_0.18_148)] border border-[oklch(0.52_0.18_148/0.35)]";
     case "Deemed":
-      return "bg-[oklch(0.80_0.15_75/0.18)] text-[oklch(0.45_0.15_75)] border border-[oklch(0.78_0.15_85/0.35)]";
+      return "bg-[oklch(0.80_0.16_86/0.15)] text-[oklch(0.42_0.14_78)] border border-[oklch(0.80_0.16_86/0.40)]";
     case "State":
-      return "bg-[oklch(0.55_0.05_240/0.15)] text-[oklch(0.35_0.05_240)] border border-[oklch(0.55_0.05_240/0.35)]";
+      return "bg-[oklch(0.54_0.06_240/0.12)] text-[oklch(0.30_0.05_240)] border border-[oklch(0.54_0.06_240/0.35)]";
     case "Private":
-      return "bg-[oklch(0.55_0.18_300/0.12)] text-[oklch(0.35_0.18_300)] border border-[oklch(0.55_0.18_300/0.30)]";
+      return "bg-[oklch(0.56_0.18_305/0.12)] text-[oklch(0.32_0.17_305)] border border-[oklch(0.56_0.18_305/0.35)]";
   }
 }
 
 function getNaacBadgeStyle(grade: College["naacGrade"]) {
   switch (grade) {
     case "A++":
-      return "bg-gold/15 text-[oklch(0.50_0.15_75)] border border-gold/40 font-bold";
+      return "bg-[oklch(0.80_0.16_86/0.16)] text-[oklch(0.42_0.14_78)] border border-[oklch(0.80_0.16_86/0.48)] font-bold";
     case "A+":
-      return "bg-[oklch(0.55_0.18_145/0.15)] text-[oklch(0.33_0.18_145)] border border-[oklch(0.55_0.18_145/0.40)] font-bold";
+      return "bg-[oklch(0.52_0.18_148/0.14)] text-[oklch(0.28_0.18_148)] border border-[oklch(0.52_0.18_148/0.42)] font-bold";
     case "A":
-      return "bg-indigo/10 text-indigo border border-indigo/30 font-bold";
+      return "bg-[oklch(0.46_0.19_266/0.13)] text-[oklch(0.28_0.18_266)] border border-[oklch(0.46_0.19_266/0.38)] font-bold";
     case "B++":
-      return "bg-[oklch(0.55_0.05_240/0.12)] text-[oklch(0.38_0.05_240)] border border-[oklch(0.55_0.05_240/0.30)] font-bold";
+      return "bg-[oklch(0.54_0.06_240/0.13)] text-[oklch(0.34_0.05_240)] border border-[oklch(0.54_0.06_240/0.36)] font-bold";
   }
 }
 
@@ -76,9 +76,9 @@ function getRankMedalStyle(rank: number): {
 } {
   if (rank === 1)
     return {
-      bg: "radial-gradient(ellipse at 30% 30%, oklch(0.90 0.18 88), oklch(0.72 0.18 72))",
+      bg: "radial-gradient(ellipse at 30% 30%, oklch(0.92 0.18 90), oklch(0.72 0.18 72))",
       text: "oklch(0.30 0.08 70)",
-      shadow: "0 4px 16px oklch(0.78 0.15 85 / 0.5)",
+      shadow: "0 4px 16px oklch(0.80 0.16 86 / 0.50)",
     };
   if (rank === 2)
     return {
@@ -93,8 +93,8 @@ function getRankMedalStyle(rank: number): {
       shadow: "0 4px 16px oklch(0.65 0.12 55 / 0.45)",
     };
   return {
-    bg: "oklch(0.22 0.06 255)",
-    text: "oklch(0.98 0.005 240)",
+    bg: "oklch(0.16 0.055 258)",
+    text: "oklch(0.98 0.005 258)",
     shadow: "none",
   };
 }
@@ -105,13 +105,13 @@ function TrendBadge({
 }: { trend: College["trend"]; change: number }) {
   if (trend === "up")
     return (
-      <span className="inline-flex items-center gap-0.5 text-[oklch(0.40_0.18_145)] text-xs font-semibold">
+      <span className="inline-flex items-center gap-0.5 text-[oklch(0.32_0.18_148)] text-xs font-semibold">
         <TrendingUp className="w-3 h-3" />+{change}
       </span>
     );
   if (trend === "down")
     return (
-      <span className="inline-flex items-center gap-0.5 text-[oklch(0.50_0.22_25)] text-xs font-semibold">
+      <span className="inline-flex items-center gap-0.5 text-[oklch(0.40_0.20_27)] text-xs font-semibold">
         <TrendingDown className="w-3 h-3" />
         {change}
       </span>
@@ -246,8 +246,12 @@ export function RankingsPage({
     <div className="min-h-screen bg-background font-body antialiased">
       {/* ── Page Header ── */}
       <header
-        className="relative bg-navy overflow-hidden"
-        style={{ paddingTop: "5rem", paddingBottom: "4rem" }}
+        className="relative overflow-hidden"
+        style={{
+          background: "oklch(0.16 0.055 258)",
+          paddingTop: "5rem",
+          paddingBottom: "4rem",
+        }}
       >
         {/* Grid pattern overlay */}
         <div className="absolute inset-0 grid-pattern opacity-20" />
@@ -256,32 +260,28 @@ export function RankingsPage({
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 70% 80% at 15% 50%, oklch(0.45 0.18 265 / 0.22) 0%, transparent 65%)",
+              "radial-gradient(ellipse 70% 80% at 15% 50%, oklch(0.46 0.19 266 / 0.30) 0%, transparent 65%)",
           }}
         />
         <div
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 50% 60% at 85% 20%, oklch(0.78 0.15 85 / 0.10) 0%, transparent 60%)",
+              "radial-gradient(ellipse 50% 60% at 85% 20%, oklch(0.80 0.16 86 / 0.10) 0%, transparent 60%)",
           }}
         />
 
         <div className="relative z-10 container mx-auto px-4">
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-2 text-sm mb-8">
-            <button
-              type="button"
-              data-ocid="rankings.link"
-              onClick={onNavigateHome}
-              className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors group"
-            >
-              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-              <span>Home</span>
-            </button>
-            <span className="text-white/25">/</span>
-            <span className="text-white/80 font-medium">Rankings</span>
-          </nav>
+          
+          {/* Go Back Button */}
+          <button
+            type="button"
+            onClick={onNavigateHome}
+            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors mb-8 group"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-medium">Back</span>
+          </button>
 
           {/* Heading */}
           <div className="max-w-3xl">
@@ -293,7 +293,7 @@ export function RankingsPage({
               <span
                 style={{
                   background:
-                    "linear-gradient(135deg, oklch(0.90 0.18 88), oklch(0.72 0.18 72))",
+                    "linear-gradient(135deg, oklch(0.92 0.18 90), oklch(0.72 0.18 72))",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
@@ -326,9 +326,9 @@ export function RankingsPage({
                 key={stat.label}
                 className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg"
                 style={{
-                  background: "oklch(1 0 0 / 0.07)",
-                  border: "1px solid oklch(1 0 0 / 0.12)",
-                  backdropFilter: "blur(8px)",
+                  background: "oklch(1 0 0 / 0.055)",
+                  border: "1px solid oklch(1 0 0 / 0.10)",
+                  backdropFilter: "blur(12px)",
                 }}
               >
                 <stat.icon className="w-4 h-4 text-gold/80" />
@@ -351,7 +351,7 @@ export function RankingsPage({
         className="sticky top-0 z-40 bg-white border-b border-border"
         style={{
           boxShadow:
-            "0 2px 16px oklch(0.22 0.06 255 / 0.08), 0 1px 0 oklch(0.88 0.01 255)",
+            "0 2px 16px oklch(0.22 0.06 258 / 0.08), 0 1px 0 oklch(0.91 0.01 258)",
         }}
       >
         <div className="container mx-auto px-4 py-3">
@@ -506,9 +506,9 @@ export function RankingsPage({
               {filtered.length === 0
                 ? "0"
                 : `${(safeCurrentPage - 1) * ITEMS_PER_PAGE + 1}–${Math.min(
-                    safeCurrentPage * ITEMS_PER_PAGE,
-                    filtered.length,
-                  )}`}
+                  safeCurrentPage * ITEMS_PER_PAGE,
+                  filtered.length,
+                )}`}
             </span>{" "}
             of{" "}
             <span className="font-semibold text-foreground">
@@ -536,7 +536,7 @@ export function RankingsPage({
             >
               <div
                 className="w-20 h-20 rounded-2xl flex items-center justify-center mb-5"
-                style={{ background: "oklch(0.45 0.18 265 / 0.08)" }}
+                style={{ background: "oklch(0.46 0.19 266 / 0.08)" }}
               >
                 <Search className="w-9 h-9 text-indigo/50" />
               </div>
@@ -565,7 +565,7 @@ export function RankingsPage({
                 <thead>
                   <tr
                     className="text-left"
-                    style={{ background: "oklch(0.22 0.06 255)" }}
+                    style={{ background: "oklch(0.16 0.055 258)" }}
                   >
                     <th className="px-3 py-3.5 font-semibold text-[11px] uppercase tracking-wider text-white/70 whitespace-nowrap w-10">
                       <span className="sr-only">Compare</span>
@@ -611,19 +611,19 @@ export function RankingsPage({
                             background:
                               i % 2 === 0
                                 ? "oklch(1 0 0)"
-                                : "oklch(0.98 0.005 240 / 0.5)",
+                                : "oklch(0.975 0.005 258 / 0.5)",
                           }}
                           onMouseEnter={(e) => {
                             (e.currentTarget as HTMLElement).style.background =
-                              "oklch(0.45 0.18 265 / 0.05)";
+                              "oklch(0.46 0.19 266 / 0.05)";
                             (e.currentTarget as HTMLElement).style.borderLeft =
-                              "3px solid oklch(0.45 0.18 265)";
+                              "3px solid oklch(0.46 0.19 266)";
                           }}
                           onMouseLeave={(e) => {
                             (e.currentTarget as HTMLElement).style.background =
                               i % 2 === 0
                                 ? "oklch(1 0 0)"
-                                : "oklch(0.98 0.005 240 / 0.5)";
+                                : "oklch(0.975 0.005 258 / 0.5)";
                             (e.currentTarget as HTMLElement).style.borderLeft =
                               "";
                           }}
@@ -711,7 +711,7 @@ export function RankingsPage({
                                   style={{
                                     width: `${college.overallScore}%`,
                                     background:
-                                      "linear-gradient(90deg, oklch(0.45 0.18 265), oklch(0.78 0.15 85))",
+                                      "linear-gradient(90deg, oklch(0.46 0.19 266), oklch(0.80 0.16 86))",
                                   }}
                                 />
                               </div>
@@ -823,7 +823,7 @@ export function RankingsPage({
                             style={{
                               width: `${college.overallScore}%`,
                               background:
-                                "linear-gradient(90deg, oklch(0.45 0.18 265), oklch(0.78 0.15 85))",
+                                "linear-gradient(90deg, oklch(0.46 0.19 266), oklch(0.80 0.16 86))",
                             }}
                           />
                         </div>
@@ -873,11 +873,10 @@ export function RankingsPage({
                             type="button"
                             data-ocid={`compare.checkbox.${rowIndex}`}
                             onClick={() => toggleCompare(college.id)}
-                            className={`h-7 px-3 text-xs font-semibold rounded-md border transition-all ${
-                              compareIds.includes(college.id)
+                            className={`h-7 px-3 text-xs font-semibold rounded-md border transition-all ${compareIds.includes(college.id)
                                 ? "bg-indigo/10 border-indigo/50 text-indigo"
                                 : "border-border text-muted-foreground hover:border-indigo/30 hover:text-indigo"
-                            }`}
+                              }`}
                           >
                             {compareIds.includes(college.id)
                               ? "✓ Compare"
@@ -939,13 +938,13 @@ export function RankingsPage({
                           style={
                             p === safeCurrentPage
                               ? {
-                                  background: "oklch(0.22 0.06 255)",
-                                  color: "oklch(0.98 0.005 240)",
-                                }
+                                background: "oklch(0.16 0.055 258)",
+                                color: "oklch(0.98 0.005 258)",
+                              }
                               : {
-                                  background: "transparent",
-                                  color: "oklch(0.45 0.04 255)",
-                                }
+                                background: "transparent",
+                                color: "oklch(0.50 0.025 258)",
+                              }
                           }
                         >
                           {p}
@@ -982,10 +981,10 @@ export function RankingsPage({
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed bottom-0 left-0 right-0 z-40"
             style={{
-              background: "oklch(0.22 0.06 255 / 0.97)",
+              background: "oklch(0.16 0.055 258 / 0.97)",
               backdropFilter: "blur(12px)",
               borderTop: "1px solid oklch(1 0 0 / 0.10)",
-              boxShadow: "0 -4px 24px oklch(0.22 0.06 255 / 0.30)",
+              boxShadow: "0 -4px 24px oklch(0.16 0.055 258 / 0.30)",
             }}
           >
             <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
@@ -1005,7 +1004,8 @@ export function RankingsPage({
                   <motion.span
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="text-xs text-[oklch(0.78_0.22_25)] font-medium"
+                    className="text-xs font-medium"
+                    style={{ color: "oklch(0.80 0.16 86)" }}
                   >
                     Max {MAX_COMPARE} colleges allowed
                   </motion.span>
@@ -1041,7 +1041,7 @@ export function RankingsPage({
       {/* ── Footer ── */}
       <footer
         className="mt-16 py-8 border-t border-border"
-        style={{ background: "oklch(0.97 0.005 255)" }}
+        style={{ background: "oklch(0.975 0.005 258)" }}
       >
         <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
