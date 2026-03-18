@@ -103,6 +103,26 @@ const LINE_COLORS = [
   "oklch(0.70 0.18 32)",
 ];
 
+const T = {
+  /* Hero background – deep navy */
+  heroBg:      "oklch(0.16 0.055 258)",
+  /* Primary accent – royal indigo */
+  indigo:      "oklch(0.46 0.19 266)",
+  indigoLight: "oklch(0.72 0.14 266)",
+  /* Secondary accent – warm gold */
+  gold:        "oklch(0.80 0.16 86)",
+  goldDeep:    "oklch(0.60 0.14 78)",
+  /* Success green */
+  green:       "oklch(0.52 0.18 148)",
+  /* Danger red */
+  red:         "oklch(0.54 0.20 27)",
+  /* Neutral text */
+  navy:        "oklch(0.20 0.05 258)",
+  muted:       "oklch(0.50 0.025 258)",
+  border:      "oklch(0.91 0.01 258)",
+  surface:     "oklch(0.975 0.005 258)",
+};
+
 // ── Section header sub-component ──────────────────────────────────────────
 function ChartCard({
   title,
@@ -308,7 +328,7 @@ export function AnalyticsDashboardPage({
       {/* ── Page Header ─────────────────────────────────────────────────── */}
       <header
         className="relative bg-navy overflow-hidden"
-        style={{ paddingTop: "5rem", paddingBottom: "4rem" }}
+        style={{ paddingTop: "5rem", paddingBottom: "4rem" , background:T.heroBg}}
       >
         {/* Grid pattern */}
         <div className="absolute inset-0 grid-pattern opacity-20" />
