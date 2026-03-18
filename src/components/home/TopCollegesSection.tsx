@@ -1,6 +1,8 @@
 import { Button } from "../ui/button";
 import { useScrollAnimation } from "../../hooks/useScrollAnimation";
-import { Award, MapPin , ArrowRight } from "lucide-react";
+import { Award, MapPin, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { CollegeSelector } from "../compare/collegeSelector";
 
 interface College {
   rank: number;
@@ -87,6 +89,67 @@ export function TopCollegesSection({
 }: TopCollegesSectionProps) {
   const { ref, isVisible } = useScrollAnimation();
 
+
+  // ✅ STATE
+  const [colleges, setColleges] = useState<College[]>(COLLEGES);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // ✅ FETCH DATA
+useEffect(() => {
+  const saved = localStorage.getItem("topColleges");
+
+  if (saved) {
+    setColleges(JSON.parse(saved)); // ⚡ instant load
+  }
+
+  const fetchColleges = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/colleges/top-colleges");
+      const data = await res.json();
+
+      const formatted = data.map((item: any) => ({
+        rank: item.rank,
+        name: item.name,
+        city: item.city || "N/A",
+        naacGrade: item.naacGrade,
+        nirfRank: Number(item.nirfRank),
+        overallScore: Number(item.overallScore),
+      }));
+
+      setColleges(formatted);
+      localStorage.setItem("topColleges", JSON.stringify(formatted)); // 💾 cache
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchColleges();
+}, []);
+
+  // ✅ LOADING UI
+  {loading && (
+  <p className="text-center text-sm text-gray-400">
+    Updating rankings...
+  </p>
+)}
+
+  if (error) {
+    return (
+      <div className="text-center py-10 text-red-500 font-semibold">
+        {error}
+      </div>
+    );
+  }
+
+  if (!colleges.length) {
+    return (
+      <div className="text-center py-10 text-gray-500 font-semibold">
+        No colleges available
+      </div>
+    );
+  }
+
   return (
     // FIXED: "bg-muted/40" (undefined token) → explicit cool off-white matching hero's navy palette
     <section id="top-colleges" className="py-20" style={{ background: "oklch(0.97 0.012 258)" }}>
@@ -136,7 +199,7 @@ export function TopCollegesSection({
 
         {/* College Cards — structure 100% unchanged */}
         <div className="flex flex-col gap-4 max-w-4xl mx-auto">
-          {COLLEGES.map((college, i) => (
+          {colleges.map((college, i) => (
             <div
               key={college.rank}
               data-ocid={`colleges.item.${i + 1}`}
@@ -265,12 +328,12 @@ export function TopCollegesSection({
               boxShadow: "0 4px 16px oklch(0.16 0.07 258 / 0.28)",
             }}
             onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLButtonElement).style.background =
-                "linear-gradient(135deg, oklch(0.22 0.08 258) 0%, oklch(0.28 0.09 258) 100%)")
+            ((e.currentTarget as HTMLButtonElement).style.background =
+              "linear-gradient(135deg, oklch(0.22 0.08 258) 0%, oklch(0.28 0.09 258) 100%)")
             }
             onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLButtonElement).style.background =
-                "linear-gradient(135deg, oklch(0.14 0.07 258) 0%, oklch(0.22 0.08 258) 100%)")
+            ((e.currentTarget as HTMLButtonElement).style.background =
+              "linear-gradient(135deg, oklch(0.14 0.07 258) 0%, oklch(0.22 0.08 258) 100%)")
             }
           >
             View Full Rankings

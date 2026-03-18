@@ -1,6 +1,8 @@
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { COLLEGES, type College } from "../data/colleges";
+import { TneaTab } from "../components/detailed/tneaStats";
+import { NaacTab, type RawCriterion } from "../components/detailed/naacStats";
 import {
   ArrowLeft,
   Award,
@@ -23,7 +25,7 @@ import {
   Users,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -43,22 +45,22 @@ import {
    ────────────────────────────────────────────────────────────────────────── */
 const T = {
   /* Hero background – deep navy */
-  heroBg:      "oklch(0.16 0.055 258)",
+  heroBg: "oklch(0.16 0.055 258)",
   /* Primary accent – royal indigo */
-  indigo:      "oklch(0.46 0.19 266)",
+  indigo: "oklch(0.46 0.19 266)",
   indigoLight: "oklch(0.72 0.14 266)",
   /* Secondary accent – warm gold */
-  gold:        "oklch(0.80 0.16 86)",
-  goldDeep:    "oklch(0.60 0.14 78)",
+  gold: "oklch(0.80 0.16 86)",
+  goldDeep: "oklch(0.60 0.14 78)",
   /* Success green */
-  green:       "oklch(0.52 0.18 148)",
+  green: "oklch(0.52 0.18 148)",
   /* Danger red */
-  red:         "oklch(0.54 0.20 27)",
+  red: "oklch(0.54 0.20 27)",
   /* Neutral text */
-  navy:        "oklch(0.20 0.05 258)",
-  muted:       "oklch(0.50 0.025 258)",
-  border:      "oklch(0.91 0.01 258)",
-  surface:     "oklch(0.975 0.005 258)",
+  navy: "oklch(0.20 0.05 258)",
+  muted: "oklch(0.50 0.025 258)",
+  border: "oklch(0.91 0.01 258)",
+  surface: "oklch(0.975 0.005 258)",
 };
 
 interface CollegeDetailsPageProps {
@@ -68,23 +70,25 @@ interface CollegeDetailsPageProps {
   compareIds: number[];
 }
 
-type TabKey = "overview" | "placement" | "courses" | "admission" | "facilities";
+type TabKey = "overview" | "placement" | "courses" | "admission" | "facilities" | "tnea" | "naac";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "overview",   label: "Overview" },
-  { key: "placement",  label: "Placement & Stats" },
-  { key: "courses",    label: "Courses & Fees" },
-  { key: "admission",  label: "Admission" },
+  { key: "overview", label: "Overview" },
+  { key: "placement", label: "Placement & Stats" },
+  { key: "courses", label: "Courses & Fees" },
+  { key: "admission", label: "Admission" },
   { key: "facilities", label: "Facilities & Recruiters" },
+  { key: "tnea", label: "Tnea Statistics" },
+  { key: "naac", label: "Naac Statistics" },
 ];
 
 /* ── Type badge colours ── */
 function getTypeBadge(type: College["type"]) {
   const map: Record<College["type"], { bg: string; text: string; border: string }> = {
-    IIT:     { bg: "oklch(0.46 0.19 266 / 0.12)", text: "oklch(0.30 0.18 266)", border: "oklch(0.46 0.19 266 / 0.35)" },
-    NIT:     { bg: "oklch(0.52 0.18 148 / 0.12)", text: "oklch(0.28 0.18 148)", border: "oklch(0.52 0.18 148 / 0.35)" },
-    Deemed:  { bg: "oklch(0.80 0.16 86  / 0.15)", text: "oklch(0.42 0.14 78)",  border: "oklch(0.80 0.16 86  / 0.40)" },
-    State:   { bg: "oklch(0.54 0.06 240 / 0.12)", text: "oklch(0.30 0.05 240)", border: "oklch(0.54 0.06 240 / 0.35)" },
+    IIT: { bg: "oklch(0.46 0.19 266 / 0.12)", text: "oklch(0.30 0.18 266)", border: "oklch(0.46 0.19 266 / 0.35)" },
+    NIT: { bg: "oklch(0.52 0.18 148 / 0.12)", text: "oklch(0.28 0.18 148)", border: "oklch(0.52 0.18 148 / 0.35)" },
+    Deemed: { bg: "oklch(0.80 0.16 86  / 0.15)", text: "oklch(0.42 0.14 78)", border: "oklch(0.80 0.16 86  / 0.40)" },
+    State: { bg: "oklch(0.54 0.06 240 / 0.12)", text: "oklch(0.30 0.05 240)", border: "oklch(0.54 0.06 240 / 0.35)" },
     Private: { bg: "oklch(0.56 0.18 305 / 0.12)", text: "oklch(0.32 0.17 305)", border: "oklch(0.56 0.18 305 / 0.35)" },
   };
   return map[type];
@@ -93,9 +97,9 @@ function getTypeBadge(type: College["type"]) {
 /* ── NAAC grade colours ── */
 function getNaacColor(grade: College["naacGrade"]) {
   const map: Record<string, { bg: string; border: string; text: string }> = {
-    "A++": { bg: "oklch(0.80 0.16 86  / 0.16)", border: "oklch(0.80 0.16 86  / 0.48)", text: "oklch(0.42 0.14 78)"  },
-    "A+":  { bg: "oklch(0.52 0.18 148 / 0.14)", border: "oklch(0.52 0.18 148 / 0.42)", text: "oklch(0.28 0.18 148)" },
-    "A":   { bg: "oklch(0.46 0.19 266 / 0.13)", border: "oklch(0.46 0.19 266 / 0.38)", text: "oklch(0.28 0.18 266)" },
+    "A++": { bg: "oklch(0.80 0.16 86  / 0.16)", border: "oklch(0.80 0.16 86  / 0.48)", text: "oklch(0.42 0.14 78)" },
+    "A+": { bg: "oklch(0.52 0.18 148 / 0.14)", border: "oklch(0.52 0.18 148 / 0.42)", text: "oklch(0.28 0.18 148)" },
+    "A": { bg: "oklch(0.46 0.19 266 / 0.13)", border: "oklch(0.46 0.19 266 / 0.38)", text: "oklch(0.28 0.18 266)" },
     "B++": { bg: "oklch(0.54 0.06 240 / 0.13)", border: "oklch(0.54 0.06 240 / 0.36)", text: "oklch(0.34 0.05 240)" },
   };
   return map[grade] ?? map["A"];
@@ -103,7 +107,7 @@ function getNaacColor(grade: College["naacGrade"]) {
 
 /* ─────────────────── Score Ring ─────────────────── */
 function ScoreRing({ score }: { score: number }) {
-  const r   = 52;
+  const r = 52;
   const circ = 2 * Math.PI * r;
   const dash = (score / 100) * circ;
 
@@ -124,7 +128,7 @@ function ScoreRing({ score }: { score: number }) {
           strokeDasharray={`${dash} ${circ}`} />
         <defs>
           <linearGradient id="sgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%"   stopColor="oklch(0.80 0.16 86)" />
+            <stop offset="0%" stopColor="oklch(0.80 0.16 86)" />
             <stop offset="100%" stopColor="oklch(0.92 0.18 90)" />
           </linearGradient>
         </defs>
@@ -145,7 +149,7 @@ function HeroStatCard({
     <div className="flex flex-col gap-1.5 px-5 py-4 rounded-2xl flex-1 min-w-[130px]"
       style={{
         background: "oklch(1 0 0 / 0.055)",
-        border:     "1px solid oklch(1 0 0 / 0.10)",
+        border: "1px solid oklch(1 0 0 / 0.10)",
         backdropFilter: "blur(12px)",
       }}>
       <Icon className="w-4 h-4 mb-0.5" style={{ color: T.gold }} />
@@ -240,17 +244,17 @@ function MetricTile({ icon: Icon, label, value, sub, accent }: {
 const EASE: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94];
 
 const containerV = {
-  hidden:  { opacity: 0 },
+  hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.07 } },
 };
 const itemV = {
-  hidden:  { opacity: 0, y: 16 },
+  hidden: { opacity: 0, y: 16 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: EASE } },
 };
 const panelV = {
-  hidden:  { opacity: 0, y: 12 },
+  hidden: { opacity: 0, y: 12 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.32, ease: EASE } },
-  exit:    { opacity: 0, y: -8, transition: { duration: 0.18 } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.18 } },
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -262,6 +266,7 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
   const tabsRef = useRef<HTMLDivElement>(null);
   const [tabsSticky, setTabsSticky] = useState(false);
   const isInCompare = compareIds.includes(collegeId);
+
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
@@ -351,7 +356,7 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold"
                     style={college.trend === "up"
                       ? { background: "oklch(0.52 0.18 148 / 0.16)", color: "oklch(0.32 0.18 148)", border: "1px solid oklch(0.52 0.18 148 / 0.38)" }
-                      : { background: "oklch(0.54 0.20 27  / 0.16)", color: "oklch(0.40 0.20 27)",  border: "1px solid oklch(0.54 0.20 27  / 0.38)" }}>
+                      : { background: "oklch(0.54 0.20 27  / 0.16)", color: "oklch(0.40 0.20 27)", border: "1px solid oklch(0.54 0.20 27  / 0.38)" }}>
                     {college.trend === "up" ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                     Rank {college.trend === "up" ? `+${college.trendChange}` : college.trendChange}
                   </span>
@@ -397,11 +402,11 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
           <motion.div className="flex flex-wrap gap-3 mt-8"
             initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.48, delay: 0.18 }}>
-            <HeroStatCard icon={Medal}     label="NIRF Rank"      value={`#${college.nirfRank}`}          sub="National Ranking" />
-            <HeroStatCard icon={BarChart3}  label="Overall Score"  value={`${college.overallScore}`}       sub="Platform Score" accent={T.gold} />
-            <HeroStatCard icon={Users}      label="Placement"      value={`${college.placementPct}%`}      sub="2024 Batch" />
-            <HeroStatCard icon={DollarSign} label="Avg Package"    value={`${college.avgPackageLPA} LPA`}  sub="Annual CTC" />
-            <HeroStatCard icon={Trophy}     label="Highest Pkg"    value={`${college.highestPackageLPA} LPA`} sub="Annual CTC" />
+            <HeroStatCard icon={Medal} label="NIRF Rank" value={`#${college.nirfRank}`} sub="National Ranking" />
+            <HeroStatCard icon={BarChart3} label="Overall Score" value={`${college.overallScore}`} sub="Platform Score" accent={T.gold} />
+            <HeroStatCard icon={Users} label="Placement" value={`${college.placementPct}%`} sub="2024 Batch" />
+            <HeroStatCard icon={DollarSign} label="Naac Grade" value={`${college.naacGrade}`} sub="Annual CTC" />
+            <HeroStatCard icon={Trophy} label="Naac score" value={`${college.avgPackageLPA}`} sub="Annual CTC" />
           </motion.div>
         </div>
       </header>
@@ -462,6 +467,18 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
               <FacilitiesTab college={college} />
             </motion.div>
           )}
+
+          {activeTab === "tnea" && (
+            <motion.div key="tnea" variants={panelV} initial="hidden" animate="visible" exit="exit">
+              <TneaTab collegeId={collegeId} />
+            </motion.div>
+          )}
+
+          {activeTab === "naac" && (
+          <motion.div key="naac" variants={panelV} initial="hidden" animate="visible" exit="exit">
+            <NaacTab collegeId={collegeId} />
+          </motion.div>
+          )};
         </AnimatePresence>
       </main>
 
@@ -503,9 +520,9 @@ function OverviewTab({ college }: { college: College }) {
         <h2 className="font-bold text-xl mb-4" style={{ color: T.navy }}>Ranking Overview</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { icon: Award,  label: "NAAC Accreditation",   value: college.naacGrade,          sub: "National Assessment Grade",     accent: T.goldDeep,  bg: "oklch(0.80 0.16 86  / 0.07)", border: "oklch(0.80 0.16 86  / 0.22)" },
-            { icon: Trophy, label: "NIRF National Rank",    value: `#${college.nirfRank}`,     sub: "National Institutional Ranking", accent: T.indigo,    bg: "oklch(0.46 0.19 266 / 0.06)", border: "oklch(0.46 0.19 266 / 0.18)" },
-            { icon: Star,   label: "Platform Score",        value: `${college.overallScore}`,  sub: "Combined Analytics Score",       accent: T.navy,      bg: "oklch(0.20 0.05 258 / 0.04)", border: "oklch(0.20 0.05 258 / 0.14)" },
+            { icon: Award, label: "NAAC Accreditation", value: college.naacGrade, sub: "National Assessment Grade", accent: T.goldDeep, bg: "oklch(0.80 0.16 86  / 0.07)", border: "oklch(0.80 0.16 86  / 0.22)" },
+            { icon: Trophy, label: "NIRF National Rank", value: `#${college.nirfRank}`, sub: "National Institutional Ranking", accent: T.indigo, bg: "oklch(0.46 0.19 266 / 0.06)", border: "oklch(0.46 0.19 266 / 0.18)" },
+            { icon: Star, label: "Platform Score", value: `${college.overallScore}`, sub: "Combined Analytics Score", accent: T.navy, bg: "oklch(0.20 0.05 258 / 0.04)", border: "oklch(0.20 0.05 258 / 0.14)" },
           ].map((card) => (
             <div key={card.label} className="rounded-2xl p-6 flex flex-col gap-3"
               style={{ background: card.bg, border: `1px solid ${card.border}` }}>
@@ -527,10 +544,10 @@ function OverviewTab({ college }: { college: College }) {
       <motion.div variants={itemV}>
         <h2 className="font-bold text-xl mb-4" style={{ color: T.navy }}>Key Metrics</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <MetricTile icon={BookOpen}   label="Total Programmes" value={`${college.courses.length}`}           sub="UG + PG"       accent={T.indigo}   />
-          <MetricTile icon={DollarSign} label="Avg Package"       value={`${college.avgPackageLPA} LPA`}       sub="2024 Batch"    accent={T.goldDeep} />
-          <MetricTile icon={Users}      label="Placement Rate"    value={`${college.placementPct}%`}           sub="2024 Batch"    accent={T.green}    />
-          <MetricTile icon={Calendar}   label="Established"       value={`${college.established}`}             sub={`${new Date().getFullYear() - college.established} years`} accent={T.navy} />
+          <MetricTile icon={BookOpen} label="Total Programmes" value={`${college.courses.length}`} sub="UG + PG" accent={T.indigo} />
+          <MetricTile icon={DollarSign} label="Avg Package" value={`${college.avgPackageLPA} LPA`} sub="2024 Batch" accent={T.goldDeep} />
+          <MetricTile icon={Users} label="Placement Rate" value={`${college.placementPct}%`} sub="2024 Batch" accent={T.green} />
+          <MetricTile icon={Calendar} label="Established" value={`${college.established}`} sub={`${new Date().getFullYear() - college.established} years`} accent={T.navy} />
         </div>
       </motion.div>
 
@@ -562,10 +579,10 @@ function PlacementTab({ college, totalPlaced, companiesVisited }: { college: Col
 
       {/* KPI row */}
       <motion.div variants={itemV} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <MetricTile icon={Trophy}     label="Highest Package"    value={`${college.highestPackageLPA} LPA`} accent={T.goldDeep} />
-        <MetricTile icon={Users}      label="Students Placed"    value={`${totalPlaced}+`}                  accent={T.indigo}   />
-        <MetricTile icon={Building2}  label="Companies Visited"  value={`${companiesVisited}+`}             accent={T.navy}     />
-        <MetricTile icon={DollarSign} label="Avg Package"        value={`${college.avgPackageLPA} LPA`}     accent={T.green}    />
+        <MetricTile icon={Trophy} label="Highest Package" value={`${college.highestPackageLPA} LPA`} accent={T.goldDeep} />
+        <MetricTile icon={Users} label="Students Placed" value={`${totalPlaced}+`} accent={T.indigo} />
+        <MetricTile icon={Building2} label="Companies Visited" value={`${companiesVisited}+`} accent={T.navy} />
+        <MetricTile icon={DollarSign} label="Avg Package" value={`${college.avgPackageLPA} LPA`} accent={T.green} />
       </motion.div>
 
       {/* Charts */}
@@ -652,7 +669,7 @@ function PlacementTab({ college, totalPlaced, companiesVisited }: { college: Col
                         <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full"
                           style={pctChg >= 0
                             ? { background: "oklch(0.52 0.18 148 / 0.10)", color: "oklch(0.30 0.18 148)" }
-                            : { background: "oklch(0.54 0.20 27  / 0.10)", color: "oklch(0.38 0.20 27)"  }}>
+                            : { background: "oklch(0.54 0.20 27  / 0.10)", color: "oklch(0.38 0.20 27)" }}>
                           {pctChg >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                           {pctChg >= 0 ? "+" : ""}{pctChg}% | {lpaChg !== null && (lpaChg >= 0 ? "+" : "")}{lpaChg} LPA
                         </span>
