@@ -759,7 +759,7 @@ export function TneaTab({ collegeId }: { collegeId: number }) {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch(`http://localhost:5000/api/colleges/99/courses_cutoff_details`)
+    fetch(`http://localhost:5000/api/colleges/${collegeId}/courses_cutoff_details`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<TneaRecord[]>;
@@ -886,7 +886,7 @@ export function TneaTab({ collegeId }: { collegeId: number }) {
             <LineChart data={trendData} margin={{ top: 5, right: 5, left: -18, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.border} />
               <XAxis dataKey="year" tick={{ fill: T.muted, fontSize: 11 }} />
-              <YAxis tick={{ fill: T.muted, fontSize: 11 }} domain={[130, 200]} />
+              <YAxis tick={{ fill: T.muted, fontSize: 11 }} domain={[80, 200]} />
               <RechartsTooltip content={<ChartTooltip />} />
               <Legend wrapperStyle={LEGEND_STYLE} />
               {trendBranches.map((br, i) => (
@@ -1168,7 +1168,7 @@ export function TneaTab({ collegeId }: { collegeId: number }) {
               className="font-semibold px-1.5 py-0.5 rounded"
               style={{ background: `${T.indigo}12`, color: T.indigo }}
             >
-              GET /api/colleges/{collegeId}/courses_cutoff_details
+              tnea
             </code>
             {" "}· All filtering happens client-side after a single fetch.
           </span>

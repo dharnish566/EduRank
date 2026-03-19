@@ -13,22 +13,14 @@ export function PageFooter() {
       className="mt-16 py-8 border-t border-border"
       style={{ background: "oklch(0.975 0.005 258)" }}
     >
-      <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+      <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-around gap-4 text-sm text-muted-foreground">
         <div className="flex items-center gap-2">
+          <p>
+            © {new Date().getFullYear()}
+          </p>
           <BarChart3 className="w-4 h-4 text-indigo" />
           <span>College Ranking Analytics Platform</span>
         </div>
-        <p>
-          © {new Date().getFullYear()}. Built with ❤️ using{" "}
-          <a
-            href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-indigo hover:underline font-medium"
-          >
-            caffeine.ai
-          </a>
-        </p>
       </div>
     </footer>
   );

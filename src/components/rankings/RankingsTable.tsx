@@ -70,8 +70,8 @@ export function RankingsTable({
         <tbody>
           <AnimatePresence mode="popLayout">
             {paginated.map((college, i) => {
-              const medal      = getRankMedalStyle(college.rank);
-              const isTopThree = college.rank <= 3;
+              // const medal      = getRankMedalStyle(college.rank);
+              // const isTopThree = college.rank <= 3;
               const rowIndex   = (safeCurrentPage - 1) * ITEMS_PER_PAGE + i + 1;
 
               return (
@@ -116,7 +116,7 @@ export function RankingsTable({
 
                   {/* Rank */}
                   <td className="px-4 py-3.5 whitespace-nowrap">
-                    <div
+                    {/* <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center font-heading font-black text-base"
                       style={{
                         background: medal.bg,
@@ -128,7 +128,7 @@ export function RankingsTable({
                       }}
                     >
                       {college.rank}
-                    </div>
+                    </div> */}
                   </td>
 
                   {/* College name */}
@@ -198,17 +198,17 @@ export function RankingsTable({
                       <span className="font-semibold text-sm text-foreground">
                         {college.placementPct}%
                       </span>
-                      <TrendBadge
+                      {/* <TrendBadge
                         trend={college.trend}
                         change={college.trendChange}
-                      />
+                      /> */}
                     </div>
                   </td>
 
                   {/* Avg Package */}
                   <td className="px-4 py-3.5 whitespace-nowrap">
                     <span className="font-semibold text-sm text-foreground">
-                      {college.avgPackageLPA} LPA
+                      {/* {college.avgPackageLPA} LPA */}
                     </span>
                   </td>
 

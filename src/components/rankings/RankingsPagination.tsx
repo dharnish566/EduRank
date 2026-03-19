@@ -1,8 +1,5 @@
-    // ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
 //  src/components/rankings/RankingsPagination.tsx
-//  Extracted from: RankingsPage.tsx
-//    → The pagination block (totalPages > 1 && ...)
-//  JSX is 100% identical — no changes at all.
 // ─────────────────────────────────────────────────────────
 
 import { Button } from "../ui/button";
@@ -10,8 +7,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface RankingsPaginationProps {
   safeCurrentPage: number;
-  totalPages:      number;
-  onGoToPage:      (p: number) => void;
+  totalPages: number;
+  onGoToPage: (p: number) => void;
 }
 
 export function RankingsPagination({
@@ -20,6 +17,25 @@ export function RankingsPagination({
   onGoToPage,
 }: RankingsPaginationProps) {
   if (totalPages <= 1) return null;
+
+  const MAX_VISIBLE = 5;
+
+  let startPage = Math.max(
+    1,
+    safeCurrentPage - Math.floor(MAX_VISIBLE / 2)
+  );
+
+  let endPage = startPage + MAX_VISIBLE - 1;
+
+  if (endPage > totalPages) {
+    endPage = totalPages;
+    startPage = Math.max(1, endPage - MAX_VISIBLE + 1);
+  }
+
+  const visiblePages: number[] = [];
+  for (let p = startPage; p <= endPage; p++) {
+    visiblePages.push(p);
+  }
 
   return (
     <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
@@ -31,6 +47,7 @@ export function RankingsPagination({
       </p>
 
       <div className="flex items-center gap-2">
+        {/* Prev Button */}
         <Button
           data-ocid="rankings.pagination_prev"
           variant="outline"
@@ -43,9 +60,23 @@ export function RankingsPagination({
           Prev
         </Button>
 
-        {/* Page number pills */}
+        {/* Page numbers */}
         <div className="flex items-center gap-1">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+          {/* First page + ellipsis */}
+          {startPage > 1 && (
+            <>
+              <button
+                onClick={() => onGoToPage(1)}
+                className="w-9 h-9 rounded-lg text-sm font-semibold"
+              >
+                1
+              </button>
+              {startPage > 2 && <span className="px-1">...</span>}
+            </>
+          )}
+
+          {/* Visible pages */}
+          {visiblePages.map((p) => (
             <button
               type="button"
               key={p}
@@ -53,15 +84,37 @@ export function RankingsPagination({
               className="w-9 h-9 rounded-lg text-sm font-semibold transition-all duration-200"
               style={
                 p === safeCurrentPage
-                  ? { background: "oklch(0.16 0.055 258)", color: "oklch(0.98 0.005 258)" }
-                  : { background: "transparent",           color: "oklch(0.50 0.025 258)" }
+                  ? {
+                      background: "oklch(0.16 0.055 258)",
+                      color: "oklch(0.98 0.005 258)",
+                    }
+                  : {
+                      background: "transparent",
+                      color: "oklch(0.50 0.025 258)",
+                    }
               }
             >
               {p}
             </button>
           ))}
+
+          {/* Last page + ellipsis */}
+          {endPage < totalPages && (
+            <>
+              {endPage < totalPages - 1 && (
+                <span className="px-1">...</span>
+              )}
+              <button
+                onClick={() => onGoToPage(totalPages)}
+                className="w-9 h-9 rounded-lg text-sm font-semibold"
+              >
+                {totalPages}
+              </button>
+            </>
+          )}
         </div>
 
+        {/* Next Button */}
         <Button
           data-ocid="rankings.pagination_next"
           variant="outline"

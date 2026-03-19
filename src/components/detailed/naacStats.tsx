@@ -610,7 +610,7 @@ export function NaacTab({ collegeId }: { collegeId: number }) {
   const fetchData = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetch(`http://localhost:5000/api/colleges/99/naac`)
+    fetch(`http://localhost:5000/api/colleges/${collegeId}/naac`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status} — ${r.statusText}`);
         return r.json() as Promise<NaacResponse>;

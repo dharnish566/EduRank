@@ -63,6 +63,18 @@ const T = {
   surface: "oklch(0.975 0.005 258)",
 };
 
+export const DEGREE_MAP: Record<string, "B.Tech"> = {
+  "AGRICULTURAL ENGINEERING": "B.Tech",
+  "BIO TECHNOLOGY": "B.Tech",
+  "Artificial Intelligence and Machine Learning": "B.Tech",
+  "Artificial Intelligence and Data Science": "B.Tech",
+  "COMPUTER SCIENCE AND BUSSINESS SYSTEM": "B.Tech",
+  "INFORMATION TECHNOLOGY": "B.Tech",
+  "INFORMATION TECHNOLOGY (SS)": "B.Tech",
+  "GEO INFORMATICS": "B.Tech",
+  "Electronics Engineering (VLSI Design and Technology) (SS)": "B.Tech"
+};
+
 interface CollegeDetailsPageProps {
   collegeId: number;
   onNavigateBack: () => void;
@@ -74,7 +86,7 @@ type TabKey = "overview" | "placement" | "courses" | "admission" | "facilities" 
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "Overview" },
-  { key: "placement", label: "Placement & Stats" },
+  // { key: "placement", label: "Placement & Stats" },
   { key: "courses", label: "Courses & Fees" },
   { key: "admission", label: "Admission" },
   { key: "facilities", label: "Facilities & Recruiters" },
@@ -261,15 +273,103 @@ const panelV = {
    MAIN PAGE
 ═══════════════════════════════════════════════════════════════════════════ */
 export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, compareIds }: CollegeDetailsPageProps) {
-  const college = COLLEGES.find((c) => c.id === collegeId);
+
+  // ── Server state ─────────────────────────────────────────────────
+  const [college, setCollege] = useState<College | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);  // for retry button
+
+  // ── Existing UI state (unchanged) ────────────────────────────────
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const tabsRef = useRef<HTMLDivElement>(null);
   const [tabsSticky, setTabsSticky] = useState(false);
   const isInCompare = compareIds.includes(collegeId);
 
+  // ── Fetch college details ─────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
 
+    const fetchCollege = async () => {
+      setIsLoading(true);
+      setIsError(false);
+      setCollege(null);
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/colleges/${collegeId}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const json = await res.json();
+
+        // ── Map backend response shape → College interface ──────────
+        if (!json.success || !json.data) throw new Error("Invalid response");
+
+        const d = json.data;
+
+        const mapped: College = {
+          id: d.id,
+          name: d.name,
+          shortName: d.name,                        // backend has no shortName yet
+
+          // Classification — backend doesn't return type yet, fallback to "State"
+          type: d.type ?? "State",
+
+          // Location
+          city: d.city ?? "",
+          state: d.state ?? "",
+          location: d.location ?? "",
+
+          // Rankings & Scores
+          nirfRank: d.nirf?.rank ?? null,
+          overallScore: d.scores?.overall ?? 0,
+          finalScore: d.scores?.final ?? 0,
+
+          // NAAC
+          naacGrade: d.naac?.grade ?? undefined,
+          naacScore: d.naac?.score ?? undefined,
+          naacAddress: d.naac?.address ?? undefined,
+
+          // Establishment
+          established: d.establishedYear ?? 0,
+
+          // Placement
+          placementPct: d.placementPercentage ?? 0,
+
+          // Courses — already in the right shape
+          courses: d.courses ?? [],
+          courseCount: d.courseCount ?? 0,
+
+          // Trend (not in response yet)
+          trend: "stable",
+          trendChange: 0,
+
+          // Optional fields not yet in API
+          about: d.about ?? undefined,
+          facilities: d.facilities ?? [],
+          admissionInfo: d.admissionInfo ?? {
+            process: [],
+            eligibility: [],
+            keyDates: [],
+          },
+        };
+
+        if (!cancelled) setCollege(mapped);
+      } catch (err) {
+        console.error("Failed to fetch college details:", err);
+        if (!cancelled) setIsError(true);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    fetchCollege();
+    return () => { cancelled = true; };
+  }, [collegeId, retryCount]);   // retryCount re-triggers fetch on retry click
+
+  // ── Scroll to top on mount ────────────────────────────────────────
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
+  // ── Sticky tab bar ────────────────────────────────────────────────
   useEffect(() => {
     const onScroll = () => {
       if (!tabsRef.current) return;
@@ -279,21 +379,62 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  if (!college) {
+  // ── Loading state ─────────────────────────────────────────────────
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: T.surface }}>
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-3" style={{ color: T.navy }}>College not found</h2>
-          <Button onClick={onNavigateBack} style={{ background: T.navy, color: "#fff" }}>Back to Rankings</Button>
+        <div className="flex flex-col items-center gap-4">
+          <div
+            className="w-12 h-12 rounded-full border-4 animate-spin"
+            style={{
+              borderColor: `${T.indigo}30`,
+              borderTopColor: T.indigo,
+            }}
+          />
+          <p className="text-sm font-semibold" style={{ color: T.muted }}>
+            Loading college details…
+          </p>
         </div>
       </div>
     );
   }
 
+  // ── Error / not found state ───────────────────────────────────────
+  if (isError || !college) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: T.surface }}>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-3" style={{ color: T.navy }}>
+            {isError ? "Failed to load college" : "College not found"}
+          </h2>
+          <p className="text-sm mb-6" style={{ color: T.muted }}>
+            {isError
+              ? "Something went wrong while fetching the data."
+              : "This college does not exist or has been removed."}
+          </p>
+          <div className="flex gap-3 justify-center">
+            {isError && (
+              <Button
+                onClick={() => setRetryCount((n) => n + 1)}
+                style={{ background: T.indigo, color: "#fff" }}
+              >
+                Retry
+              </Button>
+            )}
+            <Button onClick={onNavigateBack} style={{ background: T.navy, color: "#fff" }}>
+              Back to Rankings
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
   const naacColor = getNaacColor(college.naacGrade);
   const typeBadge = getTypeBadge(college.type);
-  const totalPlaced = college.salaryBands.reduce((a, b) => a + b.count, 0);
-  const companiesVisited = college.topRecruiters.length * 12;
+  // const totalPlaced = college.salaryBands.reduce((a, b) => a + b.count, 0);
+  // const companiesVisited = college.topRecruiters.length * 12;
 
   return (
     <div className="min-h-screen antialiased" style={{ background: T.surface, fontFamily: "'Inter', system-ui, sans-serif" }}>
@@ -364,7 +505,7 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
               </div>
 
               {/* Name */}
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-2 leading-tight max-w-2xl tracking-tight">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-2 leading-tight max-w-10xl tracking-tight">
                 {college.name}
               </h1>
 
@@ -386,7 +527,7 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
             <motion.div className="flex flex-row lg:flex-col items-center gap-5 lg:items-end"
               initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.48, delay: 0.10, ease: EASE }}>
-              <ScoreRing score={college.overallScore} />
+              {/* <ScoreRing score={college.overallScore} /> */}
               <button type="button"
                 onClick={() => onAddToCompare(collegeId)}
                 className="font-bold text-sm px-5 py-2.5 rounded-xl transition-all duration-200 leading-none"
@@ -403,10 +544,13 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
             initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.48, delay: 0.18 }}>
             <HeroStatCard icon={Medal} label="NIRF Rank" value={`#${college.nirfRank}`} sub="National Ranking" />
-            <HeroStatCard icon={BarChart3} label="Overall Score" value={`${college.overallScore}`} sub="Platform Score" accent={T.gold} />
+            <HeroStatCard icon={BarChart3} label="Overall Score" value={`${(college.overallScore ?? 0) > (college.finalScore ?? 0)
+                ? college.overallScore
+                : college.finalScore
+              }`} sub="Platform Score" accent={T.gold} />
             <HeroStatCard icon={Users} label="Placement" value={`${college.placementPct}%`} sub="2024 Batch" />
             <HeroStatCard icon={DollarSign} label="Naac Grade" value={`${college.naacGrade}`} sub="Annual CTC" />
-            <HeroStatCard icon={Trophy} label="Naac score" value={`${college.avgPackageLPA}`} sub="Annual CTC" />
+            {/* <HeroStatCard icon={Trophy} label="Naac score" value={`${college.avgPackageLPA}`} sub="Annual CTC" /> */}
           </motion.div>
         </div>
       </header>
@@ -449,7 +593,7 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
           )}
           {activeTab === "placement" && (
             <motion.div key="placement" variants={panelV} initial="hidden" animate="visible" exit="exit">
-              <PlacementTab college={college} totalPlaced={totalPlaced} companiesVisited={companiesVisited} />
+              {/* <PlacementTab college={college} totalPlaced={totalPlaced} companiesVisited={companiesVisited} /> */}
             </motion.div>
           )}
           {activeTab === "courses" && (
@@ -475,9 +619,9 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
           )}
 
           {activeTab === "naac" && (
-          <motion.div key="naac" variants={panelV} initial="hidden" animate="visible" exit="exit">
-            <NaacTab collegeId={collegeId} />
-          </motion.div>
+            <motion.div key="naac" variants={panelV} initial="hidden" animate="visible" exit="exit">
+              <NaacTab collegeId={collegeId} />
+            </motion.div>
           )};
         </AnimatePresence>
       </main>
@@ -500,6 +644,23 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
    OVERVIEW TAB
 ═══════════════════════════════════════════════════════════════════════════ */
 function OverviewTab({ college }: { college: College }) {
+  // ✅ Title Case Function
+  function toTitleCase(str: string) {
+    return str
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  function formatNirfRank(rank: number | null | undefined): string {
+    if (rank === null || rank === undefined) return "-";
+
+    if (rank == 150) return "101-150";
+    if (rank == 200) return "151-200";
+    if (rank == 300) return "201-300";
+
+    return rank.toString();
+  }
+
   return (
     <motion.div variants={containerV} initial="hidden" animate="visible" className="space-y-8">
 
@@ -507,10 +668,42 @@ function OverviewTab({ college }: { college: College }) {
       <motion.div variants={itemV}>
         <Card>
           <SectionHeading icon={BookOpen} title="About the Institution" />
+
           <div className="space-y-4">
-            {college.about.split("\n\n").map((para) => (
-              <p key={para.slice(0, 40)} className="leading-relaxed text-sm" style={{ color: T.muted }}>{para}</p>
-            ))}
+            {/* About Section */}
+            {college.about &&
+              college.about.split("\n\n").map((para) => (
+                <p
+                  key={para.slice(0, 40)}
+                  className="leading-relaxed text-sm"
+                  style={{ color: T.muted }}
+                >
+                  {para}
+                </p>
+              ))}
+
+            {/* Address Section */}
+            {college.naacAddress && (
+              <div
+                className="mt-4 pt-4"
+                style={{ borderTop: `1px solid ${T.border}` }}
+              >
+                <p
+                  className="text-xs font-semibold mb-2 flex items-center gap-2"
+                  style={{ color: T.navy }}
+                >
+                  <MapPin className="w-4 h-4" style={{ color: T.indigo }} />
+                  ADDRESS
+                </p>
+
+                <p
+                  className="text-sm leading-relaxed"
+                  style={{ color: T.muted }}
+                >
+                  {toTitleCase(college.naacAddress)}
+                </p>
+              </div>
+            )}
           </div>
         </Card>
       </motion.div>
@@ -521,7 +714,7 @@ function OverviewTab({ college }: { college: College }) {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { icon: Award, label: "NAAC Accreditation", value: college.naacGrade, sub: "National Assessment Grade", accent: T.goldDeep, bg: "oklch(0.80 0.16 86  / 0.07)", border: "oklch(0.80 0.16 86  / 0.22)" },
-            { icon: Trophy, label: "NIRF National Rank", value: `#${college.nirfRank}`, sub: "National Institutional Ranking", accent: T.indigo, bg: "oklch(0.46 0.19 266 / 0.06)", border: "oklch(0.46 0.19 266 / 0.18)" },
+            { icon: Trophy, label: "NIRF National Rank", value: `${formatNirfRank(college.nirfRank)}`, sub: "National Institutional Ranking", accent: T.indigo, bg: "oklch(0.46 0.19 266 / 0.06)", border: "oklch(0.46 0.19 266 / 0.18)" },
             { icon: Star, label: "Platform Score", value: `${college.overallScore}`, sub: "Combined Analytics Score", accent: T.navy, bg: "oklch(0.20 0.05 258 / 0.04)", border: "oklch(0.20 0.05 258 / 0.14)" },
           ].map((card) => (
             <div key={card.label} className="rounded-2xl p-6 flex flex-col gap-3"
@@ -545,7 +738,7 @@ function OverviewTab({ college }: { college: College }) {
         <h2 className="font-bold text-xl mb-4" style={{ color: T.navy }}>Key Metrics</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <MetricTile icon={BookOpen} label="Total Programmes" value={`${college.courses.length}`} sub="UG + PG" accent={T.indigo} />
-          <MetricTile icon={DollarSign} label="Avg Package" value={`${college.avgPackageLPA} LPA`} sub="2024 Batch" accent={T.goldDeep} />
+          {/* <MetricTile icon={DollarSign} label="Avg Package" value={`${college.avgPackageLPA} LPA`} sub="2024 Batch" accent={T.goldDeep} /> */}
           <MetricTile icon={Users} label="Placement Rate" value={`${college.placementPct}%`} sub="2024 Batch" accent={T.green} />
           <MetricTile icon={Calendar} label="Established" value={`${college.established}`} sub={`${new Date().getFullYear() - college.established} years`} accent={T.navy} />
         </div>
@@ -557,10 +750,10 @@ function OverviewTab({ college }: { college: College }) {
           <SectionHeading icon={GraduationCap} title="Programmes Offered" accent={T.goldDeep} />
           <div className="flex flex-wrap gap-2.5">
             {college.courses.map((c) => (
-              <span key={c}
+              <span key={c.course_code}
                 className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
                 style={{ background: `${T.indigo}0D`, border: `1px solid ${T.indigo}28`, color: T.indigo }}>
-                {c}
+                {c.course_code}
               </span>
             ))}
           </div>
@@ -579,22 +772,22 @@ function PlacementTab({ college, totalPlaced, companiesVisited }: { college: Col
 
       {/* KPI row */}
       <motion.div variants={itemV} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <MetricTile icon={Trophy} label="Highest Package" value={`${college.highestPackageLPA} LPA`} accent={T.goldDeep} />
+        {/* <MetricTile icon={Trophy} label="Highest Package" value={`${college.highestPackageLPA} LPA`} accent={T.goldDeep} /> */}
         <MetricTile icon={Users} label="Students Placed" value={`${totalPlaced}+`} accent={T.indigo} />
         <MetricTile icon={Building2} label="Companies Visited" value={`${companiesVisited}+`} accent={T.navy} />
-        <MetricTile icon={DollarSign} label="Avg Package" value={`${college.avgPackageLPA} LPA`} accent={T.green} />
+        {/* <MetricTile icon={DollarSign} label="Avg Package" value={`${college.avgPackageLPA} LPA`} accent={T.green} /> */}
       </motion.div>
 
       {/* Charts */}
       <motion.div variants={itemV} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Line chart */}
-        <Card>
+        {/* <Card>
           <h3 className="font-bold text-lg mb-1" style={{ color: T.navy }}>Placement Trend (2020–2024)</h3>
           <p className="text-xs mb-5" style={{ color: T.muted }}>Placement percentage over last 5 years</p>
           <div data-ocid="college_detail.chart_point" style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={college.placementTrend} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={T.border} />
+              {/* <LineChart data={college.placementTrend} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}> */}
+        {/* <CartesianGrid strokeDasharray="3 3" stroke={T.border} />
                 <XAxis dataKey="year" tick={{ fontSize: 11, fill: T.muted }} />
                 <YAxis domain={["auto", "auto"]} tick={{ fontSize: 11, fill: T.muted }} tickFormatter={(v) => `${v}%`} />
                 <Tooltip content={<LineTooltip />} />
@@ -604,22 +797,22 @@ function PlacementTab({ college, totalPlaced, companiesVisited }: { college: Col
               </LineChart>
             </ResponsiveContainer>
           </div>
-        </Card>
+        </Card> */}
 
         {/* Bar chart */}
         <Card>
           <h3 className="font-bold text-lg mb-1" style={{ color: T.navy }}>Salary Distribution</h3>
           <p className="text-xs mb-5" style={{ color: T.muted }}>Number of students per salary band</p>
           <div data-ocid="college_detail.chart_point" style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={college.salaryBands} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={T.border} />
+            {/* <ResponsiveContainer width="100%" height="100%"> */}
+            {/* <BarChart data={college.salaryBands} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}> */}
+            {/* <CartesianGrid strokeDasharray="3 3" stroke={T.border} />
                 <XAxis dataKey="label" tick={{ fontSize: 10, fill: T.muted }} />
                 <YAxis tick={{ fontSize: 11, fill: T.muted }} />
                 <Tooltip content={<BarTooltip />} />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]} fill={T.gold} />
-              </BarChart>
-            </ResponsiveContainer>
+                <Bar dataKey="count" radius={[4, 4, 0, 0]} fill={T.gold} /> */}
+            {/* </BarChart> */}
+            {/* </ResponsiveContainer> */}
           </div>
         </Card>
       </motion.div>
@@ -642,7 +835,7 @@ function PlacementTab({ college, totalPlaced, companiesVisited }: { college: Col
                 ))}
               </tr>
             </thead>
-            <tbody>
+            {/* <tbody>
               {[...college.placementTrend].reverse().map((row, i) => {
                 const prev = college.placementTrend[college.placementTrend.length - 2 - i];
                 const pctChg = prev ? +(row.pct - prev.pct).toFixed(1) : null;
@@ -680,7 +873,7 @@ function PlacementTab({ college, totalPlaced, companiesVisited }: { college: Col
                   </tr>
                 );
               })}
-            </tbody>
+            </tbody> */}
           </table>
         </div>
       </motion.div>
@@ -691,7 +884,13 @@ function PlacementTab({ college, totalPlaced, companiesVisited }: { college: Col
 /* ═══════════════════════════════════════════════════════════════════════════
    COURSES TAB
 ═══════════════════════════════════════════════════════════════════════════ */
+
+
 function CoursesTab({ college }: { college: College }) {
+  const cutoffs = college.courses.map(c => c.avg_cutoff);
+
+  const maxCutoff = cutoffs.length ? Math.max(...cutoffs) : 0;
+  const minCutoff = cutoffs.length ? Math.min(...cutoffs) : 0;
   return (
     <motion.div variants={containerV} initial="hidden" animate="visible" className="space-y-6">
 
@@ -700,21 +899,21 @@ function CoursesTab({ college }: { college: College }) {
         <div className="rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5"
           style={{ background: `linear-gradient(135deg, ${T.heroBg}, oklch(0.24 0.08 262))` }}>
           <div>
-            <p className="text-white/55 text-sm font-medium mb-1">Annual Fee Range</p>
-            <p className="font-black text-3xl text-white tracking-tight">
-              ₹{college.feeRange.min}K – ₹{college.feeRange.max}K
-            </p>
+            <p className="text-white/55 text-sm font-medium mb-1">Annual CutOff Range</p>
+            {/* <p className="font-black text-3xl text-white tracking-tight">
+              ₹{maxCutoff}K – ₹{min}K
+            </p> */}
             <p className="text-white/45 text-xs mt-1">Per academic year (approx.)</p>
           </div>
           <div className="flex gap-6">
             <div className="text-center">
-              <p className="font-black text-2xl" style={{ color: T.gold }}>₹{college.feeRange.min}K</p>
-              <p className="text-white/50 text-xs mt-0.5">Min (Govt Prog.)</p>
+              <p className="font-black text-2xl" style={{ color: T.gold }}>{minCutoff}</p>
+              <p className="text-white/80 text-xs mt-0.5">Min cutoff</p>
             </div>
-            <div className="w-px self-stretch" style={{ background: "oklch(1 0 0 / 0.12)" }} />
+            <div className="w-px self-stretch" style={{ background: "oklch(1 0 0 / 0.50)" }} />
             <div className="text-center">
-              <p className="font-black text-2xl" style={{ color: T.gold }}>₹{college.feeRange.max}K</p>
-              <p className="text-white/50 text-xs mt-0.5">Max (PG/Mgmt)</p>
+              <p className="font-black text-2xl" style={{ color: T.gold }}>{maxCutoff}</p>
+              <p className="text-white/80 text-xs mt-0.5">Max cutoff</p>
             </div>
           </div>
         </div>
@@ -727,14 +926,14 @@ function CoursesTab({ college }: { college: College }) {
           <h3 className="font-bold text-lg" style={{ color: T.navy }}>Programme Details</h3>
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
             style={{ background: `${T.indigo}0F`, border: `1px solid ${T.indigo}28`, color: T.indigo }}>
-            {college.coursesDetailed.length} Programmes
+            {/* {college.coursesDetailed.length} Programmes */}
           </span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: T.surface }}>
-                {["Programme", "Degree", "Duration", "Annual Fee", "Seats"].map((h) => (
+                {["Programme", "Degree", "Duration", "Average Cutoff"].map((h) => (
                   <th key={h} className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap"
                     style={{ color: T.muted }}>
                     {h}
@@ -743,33 +942,26 @@ function CoursesTab({ college }: { college: College }) {
               </tr>
             </thead>
             <tbody>
-              {college.coursesDetailed.map((course, i) => (
-                <tr key={`${course.name}-${i}`} data-ocid="college_detail.row"
+              {college.courses.map((course, i) => (
+                <tr key={`${course.course_code}-${i}`} data-ocid="college_detail.row"
                   style={{ borderTop: `1px solid ${T.border}`, background: i % 2 === 0 ? "#fff" : T.surface }}>
                   <td className="px-5 py-4">
-                    <span className="font-semibold" style={{ color: T.navy }}>{course.name}</span>
+                    <span className="font-semibold" style={{ color: T.navy }}>{course.course_name.toUpperCase()}</span>
                   </td>
                   <td className="px-5 py-4">
                     <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold"
                       style={{ background: `${T.indigo}0F`, border: `1px solid ${T.indigo}28`, color: T.indigo }}>
-                      {course.degree}
+                      {DEGREE_MAP[course.course_name] || "B.E"}
                     </span>
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-1.5" style={{ color: T.muted }}>
                       <Clock className="w-3.5 h-3.5 shrink-0" />
-                      <span>{course.duration}</span>
+                      <span>4 years</span>
                     </div>
                   </td>
                   <td className="px-5 py-4">
-                    <span className="font-bold" style={{ color: T.navy }}>₹{(course.annualFee / 1000).toFixed(0)}K</span>
-                    <span className="text-xs ml-1" style={{ color: T.muted }}>/yr</span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className="font-semibold px-3 py-1 rounded-lg text-sm"
-                      style={{ background: `${T.gold}20`, color: T.goldDeep }}>
-                      {course.seats}
-                    </span>
+                    <span className="font-bold" style={{ color: T.navy }}>{course.avg_cutoff}</span>
                   </td>
                 </tr>
               ))}
@@ -794,7 +986,7 @@ function AdmissionTab({ college }: { college: College }) {
           <Card className="h-full">
             <SectionHeading icon={BookOpen} title="Admission Process" />
             <div className="space-y-4">
-              {college.admissionInfo.process.map((step, idx) => (
+              {college.admissionInfo?.process?.map((step, idx) => (
                 <div key={step.slice(0, 30)} className="flex gap-3">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 font-black text-xs text-white"
                     style={{ background: T.indigo, boxShadow: `0 2px 8px ${T.indigo}50` }}>
@@ -812,7 +1004,7 @@ function AdmissionTab({ college }: { college: College }) {
           <Card className="h-full">
             <SectionHeading icon={CheckCircle2} title="Eligibility Criteria" accent={T.green} />
             <div className="space-y-3">
-              {college.admissionInfo.eligibility.map((item) => (
+              {college.admissionInfo?.eligibility?.map((item) => (
                 <div key={item.slice(0, 30)} className="flex gap-3 items-start">
                   <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: T.green }} />
                   <p className="text-sm leading-relaxed" style={{ color: T.muted }}>{item}</p>
@@ -831,9 +1023,9 @@ function AdmissionTab({ college }: { college: College }) {
               <div className="absolute left-[7px] top-2 bottom-2 w-0.5 rounded-full"
                 style={{ background: `${T.gold}55` }} />
               <div className="space-y-5">
-                {college.admissionInfo.keyDates.map((kd) => (
+                {college.admissionInfo?.keyDates?.map((kd) => (
                   <div key={kd.event} className="relative">
-                    <div className="absolute -left-[13px] top-[5px] w-3 h-3 rounded-full border-2"
+                    <div className="absolute -left-[25px] top-[5px] w-3 h-3 rounded-full border-2"
                       style={{ background: "#fff", borderColor: T.gold }} />
                     <p className="text-xs font-semibold" style={{ color: T.muted }}>{kd.event}</p>
                     <p className="font-bold text-sm mt-0.5" style={{ color: T.navy }}>{kd.date}</p>
@@ -852,7 +1044,7 @@ function AdmissionTab({ college }: { college: College }) {
    FACILITIES TAB
 ═══════════════════════════════════════════════════════════════════════════ */
 function FacilitiesTab({ college }: { college: College }) {
-  const maxPkg = Math.max(...college.topRecruiters.map((r) => r.avgPackage));
+  // const maxPkg = Math.max(...college.topRecruiters.map((r) => r.avgPackage));
 
   return (
     <motion.div variants={containerV} initial="hidden" animate="visible" className="space-y-10">
@@ -861,7 +1053,7 @@ function FacilitiesTab({ college }: { college: College }) {
       <motion.div variants={itemV}>
         <h2 className="font-bold text-xl mb-5" style={{ color: T.navy }}>Campus Facilities</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {college.facilities.map((fac) => (
+          {college?.facilities?.map((fac) => (
             <motion.div key={fac.name} variants={itemV}
               whileHover={{ y: -3, boxShadow: `0 8px 24px oklch(0.22 0.06 258 / 0.10)` }}
               transition={{ duration: 0.18 }}
@@ -874,63 +1066,6 @@ function FacilitiesTab({ college }: { college: College }) {
               </div>
             </motion.div>
           ))}
-        </div>
-      </motion.div>
-
-      {/* Top recruiters */}
-      <motion.div variants={itemV}>
-        <h2 className="font-bold text-xl mb-5" style={{ color: T.navy }}>Top Recruiters</h2>
-        <div className="bg-white rounded-2xl overflow-hidden"
-          style={{ border: `1px solid ${T.border}`, boxShadow: "0 1px 8px oklch(0.22 0.06 258 / 0.06)" }}>
-          {/* Header */}
-          <div className="px-6 py-4 flex items-center gap-2" style={{ borderBottom: `1px solid ${T.border}` }}>
-            <Building2 className="w-4 h-4" style={{ color: T.indigo }} />
-            <p className="text-sm" style={{ color: T.muted }}>
-              <span className="font-semibold" style={{ color: T.navy }}>{college.topRecruiters.length}</span> top companies recruit from this campus
-            </p>
-          </div>
-          {/* Rows */}
-          <div className="divide-y" style={{ borderColor: T.border }}>
-            {college.topRecruiters.map((r, i) => {
-              const barPct = (r.avgPackage / maxPkg) * 100;
-              return (
-                <div key={r.name} data-ocid="college_detail.row"
-                  className="px-6 py-4 flex items-center gap-4"
-                  style={{ background: i % 2 === 0 ? "#fff" : T.surface }}>
-                  {/* Rank badge */}
-                  <span className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm shrink-0"
-                    style={i < 3
-                      ? { background: `${T.gold}20`, color: T.goldDeep }
-                      : { background: `${T.indigo}0C`, color: T.muted }}>
-                    {i + 1}
-                  </span>
-                  {/* Avatar */}
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-sm"
-                    style={{ background: `${T.indigo}0F`, color: T.indigo, border: `1px solid ${T.indigo}25` }}>
-                    {r.name.slice(0, 2).toUpperCase()}
-                  </div>
-                  {/* Name + role */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate" style={{ color: T.navy }}>{r.name}</p>
-                    <p className="text-xs truncate" style={{ color: T.muted }}>{r.role}</p>
-                  </div>
-                  {/* Package bar */}
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="w-24 hidden sm:block">
-                      <div className="h-2 rounded-full overflow-hidden" style={{ background: T.border }}>
-                        <motion.div className="h-full rounded-full"
-                          style={{ background: `linear-gradient(90deg, ${T.indigo}, ${T.gold})` }}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${barPct}%` }}
-                          transition={{ duration: 0.8, delay: i * 0.055, ease: EASE }} />
-                      </div>
-                    </div>
-                    <span className="font-bold text-sm" style={{ color: T.indigo }}>{r.avgPackage} LPA</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </motion.div>
     </motion.div>
