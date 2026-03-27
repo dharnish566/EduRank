@@ -28,7 +28,7 @@ function Tooltip({ ...props }: TooltipProps) {
 type TooltipTriggerProps = React.ComponentProps<typeof TooltipPrimitive.Trigger>;
 
 function TooltipTrigger({ ...props }: TooltipTriggerProps) {
-  return <TooltipPrimitive.Trigger {...props} />;
+  return <TooltipPrimitive.Trigger {...props}/>;
 }
 
 type TooltipContentProps = React.ComponentProps<typeof TooltipPrimitive.Content>;

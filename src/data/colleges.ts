@@ -1,13 +1,17 @@
+export interface NaacCriterionMap {
+  [key: number]: number;
+}
 export interface College {
   id: number;
   name: string;
   shortName?: string;
 
   // Classification
-  type: "IIT" | "NIT" | "Deemed" | "State" | "Private";
+  type: "IIT" | "NIT" | "Deemed" | "State" | "Private" | string;
 
   // Location
   city: string;
+  district?: string; // ✅ ADDED — returned by backend, used in CompareTable & CollegeSelector
   state: string;
   location?: string;
 
@@ -28,13 +32,16 @@ export interface College {
   // Placement
   placementPct?: number;
 
-  // ✅ FIXED COURSES STRUCTURE
+  // Cutoffs
+  avgCutoff?: number;
+  highestCutoff?: number;
+
+  // Courses
   courses: {
     course_code: string;
     course_name: string;
     avg_cutoff: number;
   }[];
-
   courseCount?: number;
 
   // Trend
@@ -58,6 +65,8 @@ export interface College {
       date: string;
     }[];
   };
+
+  naacCriteria?: NaacCriterionMap;
 }
 
 
@@ -65,6 +74,103 @@ export interface College {
 export const COLLEGES: College[] = [
   {
     id: 99,
+    name: "Bannari Amman Institute of Technology (Autonomous), Sathyamangalam, Erode District",
+    shortName: "BIT Sathy",
+    type: "Private",
+
+    city: "Sathy",
+    district:"Erode",
+    state: "Tamil Nadu",
+    location: "Rural",
+
+    rank: 0,
+    nirfRank: 100,
+    overallScore: 75.43,
+    finalScore: 53.4,
+
+    naacGrade: "A+",
+    naacScore: 3.36,
+    naacAddress:
+      "SATHY-BHAVANI STATE HIGHWAY, ALATHUKOMBAI POST, SATHYAMANGALAM ERODE DT. Sathyamangalam 638401",
+
+    established: 1996,
+
+    placementPct: 78.25,
+
+    // ✅ COURSES (from your API)
+    courses: [
+      { course_code: "AG", course_name: "AGRICULTURAL ENGINEERING", avg_cutoff: 146 },
+      { course_code: "BT", course_name: "BIO TECHNOLOGY", avg_cutoff: 149.75 },
+      { course_code: "ME", course_name: "MECHANICAL ENGINEERING", avg_cutoff: 155.13 },
+      { course_code: "MZ", course_name: "Mechatronics Engineering", avg_cutoff: 155.25 },
+      { course_code: "EI", course_name: "ELECTRONICS AND INSTRUMENTATION ENGINEERING", avg_cutoff: 158.38 },
+      { course_code: "EE", course_name: "ELECTRICAL AND ELECTRONICS ENGINEERING", avg_cutoff: 162.63 },
+      { course_code: "AL", course_name: "Artificial Intelligence and Machine Learning", avg_cutoff: 166.5 },
+      { course_code: "CB", course_name: "COMPUTER SCIENCE AND BUSSINESS SYSTEM", avg_cutoff: 167.75 },
+      { course_code: "AD", course_name: "Artificial Intelligence and Data Science", avg_cutoff: 168 },
+      { course_code: "EC", course_name: "ELECTRONICS AND COMMUNICATION ENGINEERING", avg_cutoff: 169.38 },
+      { course_code: "IT", course_name: "INFORMATION TECHNOLOGY", avg_cutoff: 169.38 },
+      { course_code: "CS", course_name: "COMPUTER SCIENCE AND ENGINEERING", avg_cutoff: 174.13 }
+    ],
+
+    courseCount: 12,
+
+    trend: "up",
+    trendChange: 2.3,
+
+    about:
+      "Bannari Amman Institute of Technology (BIT), Sathyamangalam is a reputed private engineering college in Tamil Nadu. Established in 1996, the institution is known for strong academics and consistent placements. The campus offers modern infrastructure and focuses on emerging technologies like AI, Data Science, and Biotechnology.",
+
+    facilities: [
+      {
+        name: "Central Library",
+        icon: "📚",
+        description: "Extensive collection of books, journals, and digital resources."
+      },
+      {
+        name: "Computer Labs",
+        icon: "💻",
+        description: "Modern labs with high-speed internet and latest tools."
+      },
+      {
+        name: "Hostel",
+        icon: "🏠",
+        description: "Comfortable accommodation facilities for students."
+      },
+      {
+        name: "Sports",
+        icon: "🏏",
+        description: "Indoor and outdoor sports facilities available."
+      },
+      {
+        name: "Transport",
+        icon: "🚌",
+        description: "Bus services connecting nearby towns and cities."
+      }
+    ],
+
+    admissionInfo: {
+      process: [
+        "Apply through TNEA counselling",
+        "Fill course and college preferences",
+        "Seat allotment based on cut-off",
+        "Verify documents and confirm admission"
+      ],
+      eligibility: [
+        "12th with PCM (Physics, Chemistry, Maths)",
+        "Minimum marks as per TNEA norms",
+        "Must participate in counselling"
+      ],
+      keyDates: [
+        { event: "Application Start", date: "May 2024" },
+        { event: "Rank List", date: "June 2024" },
+        { event: "Counselling", date: "July 2024" },
+        { event: "Classes Begin", date: "August 2024" }
+      ]
+    }
+  },
+  {
+    id: 11111,
     name: "Bannari Amman Institute of Technology (Autonomous), Sathyamangalam, Erode District",
     shortName: "BIT Sathy",
     type: "Private",

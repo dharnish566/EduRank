@@ -13,7 +13,7 @@ import { HowItWorksSection } from "./components/home/HowItWorksSection";
 import { Navbar } from "./components/home/Navbar";
 import { TopCollegesSection } from "./components/home/TopCollegesSection";
 
-import { AnalyticsDashboardPage } from "./pages/AnalyticsDashboardPage";
+import { AnalyticsDashboardPage } from "./pages/AnalyticsDashboardPage"
 import { CollegeDetailsPage } from "./pages/CollegeDetailsPage";
 import { CollegeFinderPage } from "./pages/CollegeFinderPage";
 import { ComparePage } from "./pages/ComparePage";

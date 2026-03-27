@@ -113,8 +113,11 @@ function getNaacColor(grade: College["naacGrade"]) {
     "A+": { bg: "oklch(0.52 0.18 148 / 0.14)", border: "oklch(0.52 0.18 148 / 0.42)", text: "oklch(0.28 0.18 148)" },
     "A": { bg: "oklch(0.46 0.19 266 / 0.13)", border: "oklch(0.46 0.19 266 / 0.38)", text: "oklch(0.28 0.18 266)" },
     "B++": { bg: "oklch(0.54 0.06 240 / 0.13)", border: "oklch(0.54 0.06 240 / 0.36)", text: "oklch(0.34 0.05 240)" },
+    "B+": { bg: "oklch(0.54 0.06 240 / 0.13)", border: "oklch(0.54 0.06 240 / 0.36)", text: "oklch(0.34 0.05 240)" },
+    "B": { bg: "oklch(0.54 0.06 240 / 0.13)", border: "oklch(0.54 0.06 240 / 0.36)", text: "oklch(0.34 0.05 240)" },
+    "C": { bg: "oklch(0.54 0.06 240 / 0.13)", border: "oklch(0.54 0.06 240 / 0.36)", text: "oklch(0.34 0.05 240)" },
   };
-  return map[grade] ?? map["A"];
+  return map[grade ?? "-"] ?? map["A"];
 }
 
 /* ─────────────────── Score Ring ─────────────────── */
@@ -152,6 +155,17 @@ function ScoreRing({ score }: { score: number }) {
     </div>
   );
 }
+
+/* -------------format Nirf Rank--------------------------*/
+function formatNirfRank(rank: number | null | undefined): string {
+    if (rank === null || rank === undefined) return "-";
+
+    if (rank == 150) return "101-150";
+    if (rank == 200) return "151-200";
+    if (rank == 300) return "201-300";
+
+    return rank.toString();
+  }
 
 /* ─────────────────── Hero Stat Card ─────────────────── */
 function HeroStatCard({
@@ -353,7 +367,7 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
           },
         };
 
-        if (!cancelled) setCollege(mapped);
+        setCollege(mapped);
       } catch (err) {
         console.error("Failed to fetch college details:", err);
         if (!cancelled) setIsError(true);
@@ -543,7 +557,7 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
           <motion.div className="flex flex-wrap gap-3 mt-8"
             initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.48, delay: 0.18 }}>
-            <HeroStatCard icon={Medal} label="NIRF Rank" value={`#${college.nirfRank}`} sub="National Ranking" />
+            <HeroStatCard icon={Medal} label="NIRF Rank" value={`${formatNirfRank(college.nirfRank)}`} sub="National Ranking" />
             <HeroStatCard icon={BarChart3} label="Overall Score" value={`${(college.overallScore ?? 0) > (college.finalScore ?? 0)
                 ? college.overallScore
                 : college.finalScore
@@ -651,15 +665,7 @@ function OverviewTab({ college }: { college: College }) {
       .replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
-  function formatNirfRank(rank: number | null | undefined): string {
-    if (rank === null || rank === undefined) return "-";
-
-    if (rank == 150) return "101-150";
-    if (rank == 200) return "151-200";
-    if (rank == 300) return "201-300";
-
-    return rank.toString();
-  }
+  
 
   return (
     <motion.div variants={containerV} initial="hidden" animate="visible" className="space-y-8">

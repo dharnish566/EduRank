@@ -1,14 +1,3 @@
-// ─────────────────────────────────────────────────────────
-//  src/components/compare/CompareBottomBar.tsx
-//  Extracted from: ComparePage.tsx
-//    → The sticky bottom bar shown when canCompare is true
-//
-//  NOTE: This is NOT the same as components/compare/CompareBar.tsx.
-//  CompareBar (from RankingsPage) shows "X selected, Compare Now →".
-//  This bar shows rank avatars + "Comparing N colleges" + "Add from Rankings".
-//  They are different layouts and actions, so they stay in separate files.
-// ─────────────────────────────────────────────────────────
-
 import { Button } from "../ui/button";
 import { X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
