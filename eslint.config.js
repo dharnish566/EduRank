@@ -11,13 +11,21 @@ export default defineConfig([
     files: ['**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
+
+      // ✅ basic TS lint only (no type checking)
       tseslint.configs.recommended,
+
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+
+      // ❌ remove projectService (no type checking)
+      parserOptions: {
+        projectService: false,
+      },
     },
   },
 ])
