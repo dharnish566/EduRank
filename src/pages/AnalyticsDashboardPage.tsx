@@ -606,11 +606,11 @@ function Chart2_NirfRankYear({ filters }: { filters: { district: string; naac: s
                   boxShadow: "0 6px 18px rgba(0,0,0,0.08)"
                 }}>
                   <p style={{ fontSize: 12, fontWeight: 600, color: "#111827" }}>
-                    {filtered.dataKey}
+                    {typeof filtered.dataKey === 'string' ? filtered.dataKey : String(filtered.dataKey)}
                   </p>
 
-                  <p style={{ fontSize: 14, fontWeight: 700, color: filtered.color }}>
-                    Rank: {filtered.value}
+                  <p style={{ fontSize: 14, fontWeight: 700, color: filtered?.color }}>
+                    Rank: {filtered?.value}
                   </p>
 
                   <p style={{ fontSize: 11, color: "#6B7280" }}>

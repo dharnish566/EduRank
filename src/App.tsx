@@ -15,7 +15,7 @@ import { TopCollegesSection } from "./components/home/TopCollegesSection";
 
 import { AnalyticsDashboardPage } from "./pages/AnalyticsDashboardPage"
 import { CollegeDetailsPage } from "./pages/CollegeDetailsPage";
-import { CollegeFinderPage } from "./pages/CollegeFinderPage";
+import CollegeFinderPage from "./pages/CollegeFinderPage";
 import { ComparePage } from "./pages/ComparePage";
 import { RankingsPage } from "./pages/RankingsPage";
 
@@ -123,10 +123,10 @@ export default function App() {
         path="/analytics"
         element={
           <AnalyticsDashboardPage
-            onNavigateHome={() => navigate("/")}
-            onNavigateToRankings={() => navigate("/rankings")}
-            onNavigateToCompare={() => navigate("/compare")}
-            onNavigateToDetails={(id) => navigate(`/college/${id}`)}
+            // onNavigateHome={() => navigate("/")}
+            // onNavigateToRankings={() => navigate("/rankings")}
+            // onNavigateToCompare={() => navigate("/compare")}
+            // onNavigateToDetails={(id) => navigate(`/college/${id}`)}
           />
         }
       />
@@ -135,9 +135,9 @@ export default function App() {
         path="/finder"
         element={
           <CollegeFinderPage
-            onNavigateHome={() => navigate("/")}
-            onNavigateToDetails={(id) => navigate(`/college/${id}`)}
-            onNavigateToCompare={() => navigate("/compare")}
+            // onNavigateHome={() => navigate("/")}
+            // onNavigateToDetails={(id) => navigate(`/college/${id}`)}
+            // onNavigateToCompare={() => navigate("/compare")}
           />
         }
       />
