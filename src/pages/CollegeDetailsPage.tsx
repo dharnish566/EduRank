@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { apiUrl } from "../utils/api";
 import {
   Bar,
   BarChart,
@@ -310,7 +311,7 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
       setCollege(null);
 
       try {
-        const res = await fetch(`http://localhost:5000/api/colleges/${collegeId}`);
+        const res = await fetch(apiUrl(`/colleges/${collegeId}`));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const json = await res.json();

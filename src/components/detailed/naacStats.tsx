@@ -11,6 +11,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { apiUrl } from "../../utils/api";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -610,7 +611,7 @@ export function NaacTab({ collegeId }: { collegeId: number }) {
   const fetchData = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetch(`http://localhost:5000/api/colleges/${collegeId}/naac`)
+    fetch(apiUrl(`/colleges/${collegeId}/naac`))
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status} — ${r.statusText}`);
         return r.json() as Promise<NaacResponse>;

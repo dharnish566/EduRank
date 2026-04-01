@@ -2,6 +2,7 @@ import { Input } from "../ui/input";
 import { ChevronDown, Loader2, MapPin, Plus, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { apiUrl } from "../../utils/api";
 
 import { getNaacBadgeStyle, getTypeBadgeStyle } from "../../utils/rankingStyles";
 import { T } from "../../utils/compareTokens";
@@ -235,9 +236,7 @@ export function CollegeSelector({
     const run = async () => {
       setSearchLoading(true);
       try {
-        const res = await fetch(
-          `http://localhost:5000/api/colleges/search?query=${encodeURIComponent(debouncedSearch)}`,
-        );
+        const res = await fetch(apiUrl(`/colleges/search?query=${encodeURIComponent(debouncedSearch)}`));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: SearchCollege[] = await res.json();
         if (!cancelled) {
@@ -287,7 +286,7 @@ export function CollegeSelector({
       if (missing.length > 0) {
         // Step 3: fetch missing ids and map raw → College
         setDetailLoading(true);
-        fetch("http://localhost:5000/api/colleges/compare", {
+        fetch(apiUrl("/colleges/compare"), {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify({ ids: missing }),

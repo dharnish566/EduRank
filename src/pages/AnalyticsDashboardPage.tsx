@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { apiUrl } from "../utils/api";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartTooltip, ResponsiveContainer,
@@ -141,8 +142,7 @@ function useFetch(endpoint: string, filters: Record<string, any>): { data: any; 
     setLoading(true);
     setError(null);
 
-    const API_BASE = "http://localhost:5000/api";
-    const url = `${API_BASE}${endpoint}${params ? '?' + params : ''}`;
+    const url = `${apiUrl(endpoint)}${params ? '?' + params : ''}`;
     fetch(url)
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

@@ -20,6 +20,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { apiUrl } from "../../utils/api";
 import {
   Bar,
   BarChart,
@@ -759,7 +760,7 @@ export function TneaTab({ collegeId }: { collegeId: number }) {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch(`http://localhost:5000/api/colleges/${collegeId}/courses_cutoff_details`)
+    fetch(apiUrl(`/colleges/${collegeId}/courses_cutoff_details`))
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<TneaRecord[]>;

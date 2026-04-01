@@ -1,6 +1,7 @@
 import { Button } from "../ui/button";
 import { useScrollAnimation } from "../../hooks/useScrollAnimation";
 import { Award, MapPin, ArrowRight } from "lucide-react";
+import { apiUrl } from "../../utils/api";
 import { useState, useEffect } from "react";
 import { CollegeSelector } from "../compare/collegeSelector";
 
@@ -105,7 +106,7 @@ useEffect(() => {
 
   const fetchColleges = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/colleges/top-colleges");
+      const res = await fetch(apiUrl("/colleges/top-colleges"));
       const data = await res.json();
 
       const formatted = data.map((item: any) => ({

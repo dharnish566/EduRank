@@ -1,6 +1,7 @@
 // src/hooks/useRankingsData.ts
 
 import { useState, useEffect, useCallback } from "react";
+import { apiUrl } from "../utils/api";
 import type { College } from "../data/colleges";
 
 export interface RankingsApiResponse {
@@ -34,7 +35,7 @@ export function useRankingsData(limit = 10): UseRankingsDataReturn {
     setIsLoading(true);
     setIsError(false);
     try {
-      const res = await fetch(`http://localhost:5000/api/colleges/rankings?page=${page}&limit=${limit}`);
+      const res = await fetch(apiUrl(`/colleges/rankings?page=${page}&limit=${limit}`));
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const json: RankingsApiResponse = await res.json();
