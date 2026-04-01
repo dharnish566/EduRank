@@ -17,7 +17,7 @@ function Slider({
         ? value
         : Array.isArray(defaultValue)
         ? defaultValue
-        : [min, max],
+        : [min],
     [value, defaultValue, min, max]
   );
 
@@ -25,7 +25,7 @@ function Slider({
     <SliderPrimitive.Root
       data-slot="slider"
       defaultValue={defaultValue}
-      value={value}
+      value={_values}
       min={min}
       max={max}
       className={cn(
@@ -40,7 +40,7 @@ function Slider({
       >
         <SliderPrimitive.Range
           data-slot="slider-range"
-          className="bg-primary absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
+          className="absolute h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
         />
       </SliderPrimitive.Track>
 
@@ -48,7 +48,10 @@ function Slider({
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
-          className="border-primary bg-background ring-ring/50 block size-4 shrink-0 rounded-full border shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+          className="block size-4 shrink-0 rounded-full border border-white shadow-md 
+                      bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500
+                      transition-all hover:scale-110 hover:ring-4 hover:ring-purple-300
+                      focus-visible:ring-4 focus-visible:ring-purple-400 outline-none"
         />
       ))}
     </SliderPrimitive.Root>

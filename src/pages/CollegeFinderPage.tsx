@@ -1,6 +1,5 @@
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import { Checkbox } from "../components/ui/checkbox";
 import { Label } from "../components/ui/label";
 import {
   Select,
@@ -10,7 +9,6 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Slider } from "../components/ui/slider";
-import { Switch } from "../components/ui/switch";
 import { COLLEGES, type College } from "../data/colleges";
 import {
   ArrowLeft,
@@ -52,36 +50,34 @@ interface CollegeFinderPageProps {
 }
 
 interface FinderInputs {
-  cutoffScore: number;
-  academicPct: number;
-  category: "general" | "obc" | "sc_st" | "ews";
-  degreeType: "engineering" | "management" | "medical" | "arts";
-  specialization: string;
-  preferredState: string;
-  preferredCity: string;
-  maxAnnualFee: number;
-  scholarshipPreference: boolean;
-  collegeTypes: ("IIT" | "NIT" | "Deemed" | "State" | "Private")[];
-  minPlacementPct: number;
+  district: string;
+  universityType: "any" | "IIT" | "NIT" | "Deemed" | "State" | "Private";
+  naacGrade: "any" | "A++" | "A+" | "A" | "B++";
+  minNaacScore: number;
+  useNaacScore: boolean; // true = filter by score, false = filter by grade
   nirfTopN: "any" | "top10" | "top25" | "top50" | "top100";
-  hostelRequired: boolean;
+  tneaMaxCutoff: number;
+  courseName: string;
+  minPlacementPct: number;
 }
 
 interface CollegeWithScore extends College {
   matchScore: number;
   scoreBreakdown: {
-    cutoff: number;
+    district: number;
+    type: number;
+    naac: number;
+    nirf: number;
+    tnea: number;
     course: number;
-    location: number;
-    budget: number;
-    prefs: number;
+    placement: number;
   };
 }
 
 type SortKey = "matchScore" | "nirfRank" | "avgPackageLPA" | "feeMin";
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   DESIGN TOKENS — identical to ComparePage / CollegeDetailsPage / RankingsPage
+   DESIGN TOKENS — identical to original
 ───────────────────────────────────────────────────────────────────────────── */
 const T = {
   heroBg:      "oklch(0.16 0.055 258)",
@@ -162,33 +158,27 @@ function getRankMedalStyle(rank: number) {
   };
 }
 
-/* ─── Scoring ─── */
-const SPECIALIZATIONS: Record<string, string[]> = {
-  engineering: ["Any Specialization","CSE","ECE","Mechanical","Civil","EEE","IT","Data Science","AI & ML"],
-  management:  ["Any Specialization","MBA","BBA"],
-  medical:     ["Any Specialization","MBBS","BDS"],
-  arts:        ["Any Specialization","B.Sc","B.A","B.Com"],
-};
-
-const STATES = [
-  "Any State","Tamil Nadu","Maharashtra","Delhi","Karnataka",
-  "Telangana","West Bengal","Rajasthan","Uttar Pradesh",
+/* ─── Data ─── */
+const DISTRICTS = [
+  "Any District",
+  "Chennai", "Coimbatore", "Madurai", "Trichy", "Salem",
+  "Vellore", "Erode", "Tirunelveli", "Thanjavur", "Dindigul",
+  "Mumbai", "Pune", "Bangalore", "Hyderabad", "Delhi",
+  "Kolkata", "Jaipur", "Lucknow",
 ];
 
-const CITIES_BY_STATE: Record<string, string[]> = {
-  "Tamil Nadu":    ["Any City","Chennai","Coimbatore","Vellore","Trichy","Thanjavur"],
-  Maharashtra:     ["Any City","Mumbai","Pune","Nagpur"],
-  Delhi:           ["Any City","New Delhi"],
-  Karnataka:       ["Any City","Bangalore","Mysore"],
-  Telangana:       ["Any City","Hyderabad"],
-  "West Bengal":   ["Any City","Kolkata"],
-  Rajasthan:       ["Any City","Jaipur"],
-  "Uttar Pradesh": ["Any City","Lucknow","Kanpur"],
-};
+const COURSE_OPTIONS = [
+  "Any Course",
+  "B.Tech CSE", "B.Tech ECE", "B.Tech Mechanical", "B.Tech Civil",
+  "B.Tech EEE", "B.Tech IT", "B.Tech Data Science", "B.Tech AI & ML",
+  "MBA", "BBA", "MBBS", "BDS", "B.Sc", "B.A", "B.Com",
+];
 
 const NIRF_TOP_N_LABELS: Record<string, string> = {
   any: "Any Rank", top10: "Top 10", top25: "Top 25", top50: "Top 50", top100: "Top 100",
 };
+
+const NAAC_GRADES = ["any", "A++", "A+", "A", "B++"] as const;
 
 function getNirfLimit(nirfTopN: FinderInputs["nirfTopN"]): number {
   switch (nirfTopN) {
@@ -200,68 +190,99 @@ function getNirfLimit(nirfTopN: FinderInputs["nirfTopN"]): number {
   }
 }
 
-function computeMatchScore(college: College, inputs: FinderInputs): CollegeWithScore {
-  let cutoffScore   = 0;
-  let courseScore   = 0;
-  let locationScore = 0;
-  let budgetScore   = 0;
-  let prefsScore    = 0;
+const NAAC_GRADE_ORDER: Record<string, number> = { "A++": 4, "A+": 3, "A": 2, "B++": 1 };
 
+/* ─── Scoring ─── */
+function computeMatchScore(college: College, inputs: FinderInputs): CollegeWithScore {
+  let districtScore  = 0;
+  let typeScore      = 0;
+  let naacScore      = 0;
+  let nirfScore      = 0;
+  let tneaScore      = 0;
+  let courseScore    = 0;
+  let placementScore = 0;
+
+  // District (20 pts)
+  if (!inputs.district || inputs.district === "Any District") {
+    districtScore = 20;
+  } else if (college.city === inputs.district || college.state === inputs.district) {
+    districtScore = 20;
+  }
+
+  // University type (15 pts)
+  if (inputs.universityType === "any" || college.type === inputs.universityType) {
+    typeScore = 15;
+  }
+
+  // NAAC (15 pts)
+  if (inputs.useNaacScore) {
+    // filter by score — map grade to approximate score
+    const gradeToScore: Record<string, number> = { "A++": 3.76, "A+": 3.51, "A": 3.26, "B++": 3.01 };
+    const collegeScore = gradeToScore[college.naacGrade] ?? 0;
+    if (collegeScore >= inputs.minNaacScore) {
+      naacScore = 15;
+    } else if (collegeScore >= inputs.minNaacScore - 0.25) {
+      naacScore = Math.round(15 * (1 - (inputs.minNaacScore - collegeScore) / 0.25));
+    }
+  } else {
+    // filter by grade
+    if (inputs.naacGrade === "any") {
+      naacScore = 15;
+    } else {
+      const reqOrder = NAAC_GRADE_ORDER[inputs.naacGrade] ?? 0;
+      const collegeOrder = NAAC_GRADE_ORDER[college.naacGrade] ?? 0;
+      if (collegeOrder >= reqOrder) naacScore = 15;
+    }
+  }
+
+  // NIRF (10 pts)
+  const nirfLimit = getNirfLimit(inputs.nirfTopN);
+  if (college.nirfRank <= nirfLimit) {
+    nirfScore = 10;
+  }
+
+  // TNEA cutoff (20 pts)
+  // tneaMaxCutoff is the student's score; colleges need score <= tneaMaxCutoff approx
   const cutoffRequirements: Record<College["type"], number> = {
     IIT: 170, NIT: 150, Deemed: 120, State: 100, Private: 90,
   };
   const req = cutoffRequirements[college.type];
-  if (inputs.cutoffScore >= req) {
-    cutoffScore = 25;
-  } else if (inputs.cutoffScore >= req - 20) {
-    cutoffScore = Math.round(25 * (1 - (req - inputs.cutoffScore) / 20));
+  if (inputs.tneaMaxCutoff >= req) {
+    tneaScore = 20;
+  } else if (inputs.tneaMaxCutoff >= req - 20) {
+    tneaScore = Math.round(20 * (1 - (req - inputs.tneaMaxCutoff) / 20));
   }
 
-  const degreeKeywords: Record<string, string[]> = {
-    engineering: ["B.E","B.Tech","M.E","M.Tech","BE","BTech"],
-    management:  ["MBA","BBA"],
-    medical:     ["MBBS","BDS","MBBS/BDS"],
-    arts:        ["B.Sc","B.A","B.Com","BSc","BA","BCom"],
-  };
-  const keywords      = degreeKeywords[inputs.degreeType] || [];
-  const hasDegreeMatch = college.courses.some((c) => keywords.some((k) => c.toLowerCase().includes(k.toLowerCase())));
-  if (hasDegreeMatch) {
-    if (inputs.specialization && inputs.specialization !== "Any Specialization") {
-      const hasSpec = college.coursesDetailed.some((cd) =>
-        cd.name.toLowerCase().includes(inputs.specialization.toLowerCase()),
-      );
-      courseScore = hasSpec ? 25 : 15;
-    } else {
-      courseScore = 25;
-    }
+  // Course (15 pts)
+  if (!inputs.courseName || inputs.courseName === "Any Course") {
+    courseScore = 15;
+  } else {
+    const keyword = inputs.courseName.replace("B.Tech ", "").toLowerCase();
+    const hasMatch = college.courses.some((c) => c.toLowerCase().includes(keyword)) ||
+      college.coursesDetailed?.some((cd) => cd.name.toLowerCase().includes(keyword));
+    if (hasMatch) courseScore = 15;
   }
 
-  if (!inputs.preferredState || inputs.preferredState === "Any State") {
-    locationScore = 20;
-  } else if (college.state === inputs.preferredState) {
-    locationScore = (!inputs.preferredCity || inputs.preferredCity === "Any City")
-      ? 20
-      : college.city === inputs.preferredCity ? 20 : 12;
+  // Placement % (5 pts)
+  if (college.placementPct >= inputs.minPlacementPct) {
+    placementScore = 5;
+  } else if (college.placementPct >= inputs.minPlacementPct - 10) {
+    placementScore = Math.round(5 * (1 - (inputs.minPlacementPct - college.placementPct) / 10));
   }
 
-  const feeInRupees = college.feeRange.min * 1000;
-  const maxFee      = inputs.maxAnnualFee;
-  if (feeInRupees <= maxFee) {
-    budgetScore = 15;
-  } else if (feeInRupees <= maxFee * 1.2) {
-    budgetScore = Math.round(15 * (1 - (feeInRupees - maxFee) / (maxFee * 0.2)));
-  }
-
-  if (inputs.collegeTypes.length === 0 || inputs.collegeTypes.includes(college.type)) prefsScore += 5;
-  if (college.placementPct >= inputs.minPlacementPct) prefsScore += 5;
-  const hasHostel = college.facilities.some((f) => f.name.toLowerCase().includes("hostel"));
-  if (!inputs.hostelRequired || hasHostel) prefsScore += 5;
-
-  const total = Math.min(100, cutoffScore + courseScore + locationScore + budgetScore + prefsScore);
+  const total = Math.min(100, districtScore + typeScore + naacScore + nirfScore + tneaScore + courseScore + placementScore);
   return {
     ...college,
     matchScore: total,
-    scoreBreakdown: { cutoff: cutoffScore, course: courseScore, location: locationScore, budget: budgetScore, prefs: prefsScore },
+    scoreBreakdown: {
+      district:  districtScore,
+      type:      typeScore,
+      naac:      naacScore,
+      nirf:      nirfScore,
+      tnea:      tneaScore,
+      course:    courseScore,
+      placement: placementScore,
+    },
   };
 }
 
@@ -269,8 +290,8 @@ function computeMatchScore(college: College, inputs: FinderInputs): CollegeWithS
    MATCH SCORE RING
 ═══════════════════════════════════════════════════════════════════════════ */
 function MatchScoreRing({ score, size = 72 }: { score: number; size?: number }) {
-  const r     = (size - 10) / 2;
-  const circ  = 2 * Math.PI * r;
+  const r      = (size - 10) / 2;
+  const circ   = 2 * Math.PI * r;
   const offset = circ - (score / 100) * circ;
   const color  = getMatchColor(score);
 
@@ -283,12 +304,7 @@ function MatchScoreRing({ score, size = 72 }: { score: number; size?: number }) 
       aria-label={`Match score: ${score}%`}
     >
       <title>Match score: {score}%</title>
-      <circle
-        cx={size / 2} cy={size / 2} r={r}
-        fill="none"
-        stroke={`${T.heroBg}1F`}
-        strokeWidth={7}
-      />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`${T.heroBg}1F`} strokeWidth={7} />
       <circle
         cx={size / 2} cy={size / 2} r={r}
         fill="none"
@@ -375,25 +391,21 @@ export function CollegeFinderPage({
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const [inputs, setInputs] = useState<FinderInputs>({
-    cutoffScore:           140,
-    academicPct:           75,
-    category:              "general",
-    degreeType:            "engineering",
-    specialization:        "Any Specialization",
-    preferredState:        "Any State",
-    preferredCity:         "Any City",
-    maxAnnualFee:          300000,
-    scholarshipPreference: false,
-    collegeTypes:          [],
-    minPlacementPct:       60,
-    nirfTopN:              "any",
-    hostelRequired:        false,
+    district:        "Any District",
+    universityType:  "any",
+    naacGrade:       "any",
+    minNaacScore:    3.0,
+    useNaacScore:    false,
+    nirfTopN:        "any",
+    tneaMaxCutoff:   140,
+    courseName:      "Any Course",
+    minPlacementPct: 60,
   });
 
-  const [results, setResults]       = useState<CollegeWithScore[] | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [sortKey, setSortKey]        = useState<SortKey>("matchScore");
-  const [savedIds, setSavedIds]      = useState<number[]>([]);
+  const [results, setResults]             = useState<CollegeWithScore[] | null>(null);
+  const [isAnalyzing, setIsAnalyzing]     = useState(false);
+  const [sortKey, setSortKey]             = useState<SortKey>("matchScore");
+  const [savedIds, setSavedIds]           = useState<number[]>([]);
   const [shortlistOpen, setShortlistOpen] = useState(false);
 
   const update = useCallback(
@@ -402,14 +414,11 @@ export function CollegeFinderPage({
     [],
   );
 
-  const cities        = inputs.preferredState !== "Any State" ? (CITIES_BY_STATE[inputs.preferredState] ?? ["Any City"]) : ["Any City"];
-  const specializations = SPECIALIZATIONS[inputs.degreeType] ?? ["Any Specialization"];
-
   const handleFind = async () => {
     setIsAnalyzing(true);
     await new Promise((r) => setTimeout(r, 600));
-    const nirfLimit  = getNirfLimit(inputs.nirfTopN);
-    const scored     = COLLEGES.filter((c) => c.nirfRank <= nirfLimit)
+    const nirfLimit = getNirfLimit(inputs.nirfTopN);
+    const scored    = COLLEGES.filter((c) => c.nirfRank <= nirfLimit)
       .map((c) => computeMatchScore(c, inputs))
       .filter((c) => c.matchScore > 0)
       .sort((a, b) => b.matchScore - a.matchScore);
@@ -434,16 +443,8 @@ export function CollegeFinderPage({
   const toggleSave = (id: number) =>
     setSavedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
-  const toggleCollegeType = (type: "IIT" | "NIT" | "Deemed" | "State" | "Private") =>
-    setInputs((prev) => ({
-      ...prev,
-      collegeTypes: prev.collegeTypes.includes(type)
-        ? prev.collegeTypes.filter((t) => t !== type)
-        : [...prev.collegeTypes, type],
-    }));
-
-  const savedColleges  = COLLEGES.filter((c) => savedIds.includes(c.id));
-  const top3Results    = sortedResults?.slice(0, 3) ?? [];
+  const savedColleges = COLLEGES.filter((c) => savedIds.includes(c.id));
+  const top3Results   = sortedResults?.slice(0, 3) ?? [];
 
   const matchBarData = sortedResults?.slice(0, 8).map((c) => ({
     name:  c.shortName,
@@ -456,7 +457,7 @@ export function CollegeFinderPage({
     pkg:  c.avgPackageLPA,
   })) ?? [];
 
-  const trendYears    = [...new Set(top3Results.flatMap((c) => c.placementTrend.map((t) => t.year)))].sort();
+  const trendYears     = [...new Set(top3Results.flatMap((c) => c.placementTrend.map((t) => t.year)))].sort();
   const trendChartData = trendYears.map((yr) => {
     const row: Record<string, number | string> = { year: yr };
     for (const c of top3Results) {
@@ -467,7 +468,6 @@ export function CollegeFinderPage({
   });
   const trendColors = [T.gold, T.indigo, T.green];
 
-  /* ── Shared chart tooltip style ── */
   const tooltipStyle = {
     background:   T.heroBg,
     border:       `1px solid oklch(1 0 0 / 0.12)`,
@@ -482,11 +482,7 @@ export function CollegeFinderPage({
       {/* ══════════════════════════════════════════
           HERO BANNER
       ══════════════════════════════════════════ */}
-      <section
-        className="relative overflow-hidden pt-16"
-        style={{ background: T.heroBg }}
-      >
-        {/* Dot-grid texture */}
+      <section className="relative overflow-hidden pt-16" style={{ background: T.heroBg }}>
         <div
           className="absolute inset-0"
           style={{
@@ -495,17 +491,14 @@ export function CollegeFinderPage({
             opacity:         0.55,
           }}
         />
-        {/* Indigo glow — top-right */}
         <div
           className="absolute top-0 right-[15%] w-[480px] h-[480px] rounded-full pointer-events-none"
           style={{ background: `radial-gradient(ellipse, ${T.indigo}38 0%, transparent 70%)` }}
         />
-        {/* Gold glow — bottom-left */}
         <div
           className="absolute bottom-0 left-[10%] w-[360px] h-[360px] rounded-full pointer-events-none"
           style={{ background: `radial-gradient(ellipse, ${T.gold}26 0%, transparent 70%)` }}
         />
-        {/* Decorative circle */}
         <div
           className="absolute pointer-events-none"
           style={{
@@ -516,7 +509,6 @@ export function CollegeFinderPage({
         />
 
         <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-14">
-          {/* Breadcrumb */}
           <motion.nav
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -540,27 +532,19 @@ export function CollegeFinderPage({
           </motion.nav>
 
           <div className="max-w-3xl">
-            {/* Eyebrow pill */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5"
-              style={{
-                background: `${T.gold}1F`,
-                border:     `1px solid ${T.gold}40`,
-              }}
+              style={{ background: `${T.gold}1F`, border: `1px solid ${T.gold}40` }}
             >
               <Sparkles className="w-3.5 h-3.5" style={{ color: T.gold }} />
-              <span
-                className="text-xs font-bold tracking-widest uppercase"
-                style={{ color: T.gold }}
-              >
+              <span className="text-xs font-bold tracking-widest uppercase" style={{ color: T.gold }}>
                 AI-Powered Matching
               </span>
             </motion.div>
 
-            {/* H1 */}
             <motion.h1
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -599,7 +583,6 @@ export function CollegeFinderPage({
               Enter your details below and get personalized college recommendations instantly.
             </motion.p>
 
-            {/* Stats strip */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -669,178 +652,160 @@ export function CollegeFinderPage({
             </div>
 
             <div className="p-6 space-y-8">
-              {/* ── Academic Details ── */}
-              <FormSection label="Academic Details">
+
+              {/* ── Location & Institution ── */}
+              <FormSection label="Location & Institution">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>District</Label>
+                  <Select value={inputs.district} onValueChange={(v) => update("district", v)}>
+                    <SelectTrigger data-ocid="finder.district_select" className="bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DISTRICTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>University Type</Label>
+                  <Select
+                    value={inputs.universityType}
+                    onValueChange={(v) => update("universityType", v as FinderInputs["universityType"])}
+                  >
+                    <SelectTrigger data-ocid="finder.university_type_select" className="bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Any Type</SelectItem>
+                      <SelectItem value="IIT">IIT</SelectItem>
+                      <SelectItem value="NIT">NIT</SelectItem>
+                      <SelectItem value="Deemed">Deemed</SelectItem>
+                      <SelectItem value="State">State University</SelectItem>
+                      <SelectItem value="Private">Private</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </FormSection>
+
+              <div className="border-t" style={{ borderColor: `${T.border}99` }} />
+
+              {/* ── Accreditation ── */}
+              <FormSection label="Accreditation">
+                {/* Toggle: grade vs score */}
+                <div className="sm:col-span-2 flex items-center gap-3 rounded-xl px-4 py-3"
+                  style={{ background: T.surface, border: `1px solid ${T.border}` }}
+                >
+                  <span className="text-sm font-semibold flex-1" style={{ color: T.navy }}>
+                    Filter NAAC by
+                  </span>
+                  <div className="flex gap-2">
+                    {[
+                      { key: false, label: "Grade" },
+                      { key: true,  label: "Score" },
+                    ].map(({ key, label }) => (
+                      <button
+                        key={String(key)}
+                        type="button"
+                        onClick={() => update("useNaacScore", key)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150"
+                        style={
+                          inputs.useNaacScore === key
+                            ? { background: T.navy, color: T.white, borderColor: T.navy, boxShadow: `0 2px 8px ${T.navy}40` }
+                            : { background: T.surface, color: T.muted, borderColor: T.border }
+                        }
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {!inputs.useNaacScore ? (
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label className="text-sm font-semibold" style={{ color: T.navy }}>
+                      Minimum NAAC Grade
+                    </Label>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {NAAC_GRADES.map((g) => {
+                        const active = inputs.naacGrade === g;
+                        return (
+                          <button
+                            key={g}
+                            type="button"
+                            data-ocid="finder.naac_grade_toggle"
+                            onClick={() => update("naacGrade", g)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150"
+                            style={
+                              active
+                                ? { background: T.navy, color: T.white, borderColor: T.navy, boxShadow: `0 2px 8px ${T.navy}40` }
+                                : { background: T.surface, color: T.muted, borderColor: T.border }
+                            }
+                          >
+                            {g === "any" ? "Any" : `NAAC ${g}`}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <SliderField
+                    label="Minimum NAAC Score"
+                    value={inputs.minNaacScore}
+                    min={1.0} max={4.0} step={0.01}
+                    format={(v) => v.toFixed(2)}
+                    onChange={(v) => update("minNaacScore", v)}
+                    hint="NAAC score ranges: A++ (3.76–4.0), A+ (3.51–3.75), A (3.26–3.50), B++ (3.01–3.25)"
+                  />
+                )}
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>
+                    NIRF Rank Range{" "}
+                    <span className="font-normal text-xs" style={{ color: T.muted }}>(optional)</span>
+                  </Label>
+                  <Select
+                    value={inputs.nirfTopN}
+                    onValueChange={(v) => update("nirfTopN", v as FinderInputs["nirfTopN"])}
+                  >
+                    <SelectTrigger data-ocid="finder.nirf_select" className="bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(["any", "top10", "top25", "top50", "top100"] as const).map((k) => (
+                        <SelectItem key={k} value={k}>{NIRF_TOP_N_LABELS[k]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </FormSection>
+
+              <div className="border-t" style={{ borderColor: `${T.border}99` }} />
+
+              {/* ── Academic & Course ── */}
+              <FormSection label="Academic & Course">
                 <SliderField
-                  label="TNEA Cutoff / Entrance Score"
-                  value={inputs.cutoffScore}
+                  label="TNEA Average Cutoff"
+                  value={inputs.tneaMaxCutoff}
                   min={0} max={200} step={1}
                   format={(v) => `${v} / 200`}
-                  onChange={(v) => update("cutoffScore", v)}
-                  hint="Your TNEA cutoff marks or JEE/entrance exam score"
+                  onChange={(v) => update("tneaMaxCutoff", v)}
+                  hint="Your TNEA cutoff marks or entrance exam score"
                 />
-                <SliderField
-                  label="Academic Percentage (%)"
-                  value={inputs.academicPct}
-                  min={0} max={100} step={1}
-                  format={(v) => `${v}%`}
-                  onChange={(v) => update("academicPct", v)}
-                />
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>Category</Label>
-                  <Select value={inputs.category} onValueChange={(v) => update("category", v as FinderInputs["category"])}>
-                    <SelectTrigger data-ocid="finder.category_select" className="bg-background"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="general">General</SelectItem>
-                      <SelectItem value="obc">OBC</SelectItem>
-                      <SelectItem value="sc_st">SC / ST</SelectItem>
-                      <SelectItem value="ews">EWS</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </FormSection>
 
-              <div className="border-t" style={{ borderColor: `${T.border}99` }} />
-
-              {/* ── Course Preference ── */}
-              <FormSection label="Course Preference">
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>Degree Type</Label>
+                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>Course Name</Label>
                   <Select
-                    value={inputs.degreeType}
-                    onValueChange={(v) => {
-                      update("degreeType", v as FinderInputs["degreeType"]);
-                      update("specialization", "Any Specialization");
-                    }}
+                    value={inputs.courseName}
+                    onValueChange={(v) => update("courseName", v)}
                   >
-                    <SelectTrigger data-ocid="finder.degree_select" className="bg-background"><SelectValue /></SelectTrigger>
+                    <SelectTrigger data-ocid="finder.course_select" className="bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="engineering">Engineering</SelectItem>
-                      <SelectItem value="management">Management</SelectItem>
-                      <SelectItem value="medical">Medical</SelectItem>
-                      <SelectItem value="arts">Arts &amp; Science</SelectItem>
+                      {COURSE_OPTIONS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>Course Specialization</Label>
-                  <Select value={inputs.specialization} onValueChange={(v) => update("specialization", v)}>
-                    <SelectTrigger data-ocid="finder.specialization_select" className="bg-background"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {specializations.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </FormSection>
-
-              <div className="border-t" style={{ borderColor: `${T.border}99` }} />
-
-              {/* ── Location Preference ── */}
-              <FormSection label="Location Preference">
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>Preferred State</Label>
-                  <Select
-                    value={inputs.preferredState}
-                    onValueChange={(v) => { update("preferredState", v); update("preferredCity", "Any City"); }}
-                  >
-                    <SelectTrigger data-ocid="finder.state_select" className="bg-background"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>Preferred City</Label>
-                  <Select
-                    value={inputs.preferredCity}
-                    onValueChange={(v) => update("preferredCity", v)}
-                    disabled={inputs.preferredState === "Any State"}
-                  >
-                    <SelectTrigger data-ocid="finder.city_select" className="bg-background"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </FormSection>
-
-              <div className="border-t" style={{ borderColor: `${T.border}99` }} />
-
-              {/* ── Budget Preference ── */}
-              <FormSection label="Budget Preference">
-                <SliderField
-                  label="Maximum Annual Fee"
-                  value={inputs.maxAnnualFee}
-                  min={50000} max={500000} step={10000}
-                  format={(v) => `₹${(v / 100000).toFixed(1)} L`}
-                  onChange={(v) => update("maxAnnualFee", v)}
-                  hint="Per year tuition fee limit"
-                />
-                <div className="flex items-center gap-3 pt-1">
-                  <Checkbox
-                    id="scholarship"
-                    data-ocid="finder.scholarship_checkbox"
-                    checked={inputs.scholarshipPreference}
-                    onCheckedChange={(v) => update("scholarshipPreference", !!v)}
-                  />
-                  <Label htmlFor="scholarship" className="text-sm cursor-pointer" style={{ color: T.navy }}>
-                    I prefer colleges offering scholarships
-                  </Label>
-                </div>
-              </FormSection>
-
-              <div className="border-t" style={{ borderColor: `${T.border}99` }} />
-
-              {/* ── Additional Preferences ── */}
-              <FormSection label="Additional Preferences">
-                {/* College type toggles */}
-                <div className="sm:col-span-2 space-y-2">
-                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>
-                    College Type (select all that apply)
-                  </Label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {(["IIT","NIT","Deemed","State","Private"] as const).map((type) => {
-                      const active = inputs.collegeTypes.includes(type);
-                      return (
-                        <button
-                          key={type}
-                          type="button"
-                          data-ocid="finder.type_toggle"
-                          onClick={() => toggleCollegeType(type)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150"
-                          style={
-                            active
-                              ? { background: T.navy, color: T.white, borderColor: T.navy,
-                                  boxShadow: `0 2px 8px ${T.navy}40` }
-                              : { background: T.surface, color: T.muted, borderColor: T.border }
-                          }
-                          onMouseEnter={(e) => {
-                            if (!active) (e.currentTarget as HTMLElement).style.borderColor = `${T.navy}66`;
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!active) (e.currentTarget as HTMLElement).style.borderColor = T.border;
-                          }}
-                        >
-                          {type}
-                        </button>
-                      );
-                    })}
-                    {inputs.collegeTypes.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => update("collegeTypes", [])}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-dashed transition-colors"
-                        style={{ borderColor: `${T.muted}55`, color: T.muted }}
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
-                  {inputs.collegeTypes.length === 0 && (
-                    <p className="text-xs" style={{ color: T.muted }}>
-                      All types selected (leave blank for no preference)
-                    </p>
-                  )}
                 </div>
 
                 <SliderField
@@ -850,39 +815,6 @@ export function CollegeFinderPage({
                   format={(v) => `${v}%`}
                   onChange={(v) => update("minPlacementPct", v)}
                 />
-
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold" style={{ color: T.navy }}>NIRF Rank Range</Label>
-                  <Select value={inputs.nirfTopN} onValueChange={(v) => update("nirfTopN", v as FinderInputs["nirfTopN"])}>
-                    <SelectTrigger data-ocid="finder.nirf_select" className="bg-background"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {(["any","top10","top25","top50","top100"] as const).map((k) => (
-                        <SelectItem key={k} value={k}>{NIRF_TOP_N_LABELS[k]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Hostel switch */}
-                <div
-                  className="flex items-center justify-between rounded-xl px-4 py-3"
-                  style={{
-                    background: T.surface,
-                    border:     `1px solid ${T.border}`,
-                  }}
-                >
-                  <div>
-                    <Label className="text-sm font-semibold" style={{ color: T.navy }}>Hostel Required</Label>
-                    <p className="text-xs mt-0.5" style={{ color: T.muted }}>
-                      Only show colleges with hostel facilities
-                    </p>
-                  </div>
-                  <Switch
-                    data-ocid="finder.hostel_switch"
-                    checked={inputs.hostelRequired}
-                    onCheckedChange={(v) => update("hostelRequired", v)}
-                  />
-                </div>
               </FormSection>
             </div>
 
@@ -896,10 +828,7 @@ export function CollegeFinderPage({
                 onClick={handleFind}
                 disabled={isAnalyzing}
                 className="w-full font-bold text-base py-6 rounded-xl shadow-sm transition-all"
-                style={{
-                  background: T.gold,
-                  color:      T.navy,
-                }}
+                style={{ background: T.gold, color: T.navy }}
                 size="lg"
               >
                 {isAnalyzing ? (
@@ -934,7 +863,6 @@ export function CollegeFinderPage({
             style={{ background: T.surface }}
           >
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-              {/* Results header */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -948,11 +876,7 @@ export function CollegeFinderPage({
                   <Badge
                     data-ocid="finder.results_section"
                     className="font-bold"
-                    style={{
-                      background: T.indigoDim,
-                      color:      T.indigo,
-                      border:     `1px solid ${T.indigo}33`,
-                    }}
+                    style={{ background: T.indigoDim, color: T.indigo, border: `1px solid ${T.indigo}33` }}
                   >
                     {sortedResults.length} matches
                   </Badge>
@@ -991,7 +915,7 @@ export function CollegeFinderPage({
                     No Matches Found
                   </h3>
                   <p className="text-sm mb-6 max-w-sm mx-auto" style={{ color: T.muted }}>
-                    Try adjusting your filters — lower the minimum placement %, increase the budget, or select "Any State" for location.
+                    Try adjusting your filters — lower the minimum placement %, change the district to "Any District", or select a different course.
                   </p>
                   <Button
                     data-ocid="finder.adjust_filters_button"
@@ -1004,10 +928,7 @@ export function CollegeFinderPage({
                   </Button>
                 </motion.div>
               ) : (
-                <div
-                  className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
-                  data-ocid="finder.list"
-                >
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" data-ocid="finder.list">
                   {sortedResults.map((college, idx) => {
                     const medalStyle = getRankMedalStyle(idx + 1);
                     const isSaved    = savedIds.includes(college.id);
@@ -1034,21 +955,14 @@ export function CollegeFinderPage({
                           (e.currentTarget as HTMLElement).style.transform  = "translateY(0)";
                         }}
                       >
-                        {/* Card body */}
                         <div className="p-5 pb-4 flex-1">
                           <div className="flex items-start gap-3 mb-3">
-                            {/* Rank medal */}
                             <div
                               className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0"
-                              style={{
-                                background: medalStyle.bg,
-                                color:      medalStyle.text,
-                                boxShadow:  medalStyle.shadow,
-                              }}
+                              style={{ background: medalStyle.bg, color: medalStyle.text, boxShadow: medalStyle.shadow }}
                             >
                               {idx < 3 ? ["🥇","🥈","🥉"][idx] : `#${idx + 1}`}
                             </div>
-
                             <div className="flex-1 min-w-0">
                               <h3
                                 className="font-heading font-bold text-sm leading-tight line-clamp-2 transition-colors group-hover:text-[oklch(0.46_0.19_266)]"
@@ -1065,37 +979,25 @@ export function CollegeFinderPage({
                                 </span>
                               </div>
                             </div>
-
-                            {/* Bookmark */}
                             <button
                               type="button"
                               data-ocid={`finder.toggle.${idx + 1}`}
                               onClick={() => toggleSave(college.id)}
                               className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all"
-                              style={
-                                isSaved
-                                  ? { background: `${T.gold}22`, color: T.goldText }
-                                  : { background: T.surface, color: T.muted }
-                              }
-                              onMouseEnter={(e) => {
-                                if (!isSaved) (e.currentTarget as HTMLElement).style.color = T.navy;
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!isSaved) (e.currentTarget as HTMLElement).style.color = T.muted;
-                              }}
+                              style={isSaved ? { background: `${T.gold}22`, color: T.goldText } : { background: T.surface, color: T.muted }}
+                              onMouseEnter={(e) => { if (!isSaved) (e.currentTarget as HTMLElement).style.color = T.navy; }}
+                              onMouseLeave={(e) => { if (!isSaved) (e.currentTarget as HTMLElement).style.color = T.muted; }}
                               title={isSaved ? "Remove from shortlist" : "Add to shortlist"}
                             >
                               {isSaved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
                             </button>
                           </div>
 
-                          {/* Location */}
                           <div className="flex items-center gap-1 text-xs mb-4" style={{ color: T.muted }}>
                             <MapPin className="w-3 h-3" style={{ color: T.gold }} />
                             {college.city}, {college.state}
                           </div>
 
-                          {/* Match score + stats */}
                           <div className="flex items-center gap-4 mb-4">
                             <div className="relative shrink-0">
                               <MatchScoreRing score={college.matchScore} size={68} />
@@ -1112,10 +1014,9 @@ export function CollegeFinderPage({
                             </div>
                             <div className="flex-1 grid grid-cols-2 gap-y-2 gap-x-3">
                               {[
-                                { label: "Avg Pkg",    value: `₹${college.avgPackageLPA}L`                    },
-                                { label: "Placement",  value: `${college.placementPct}%`                       },
-                                { label: "Annual Fee", value: `₹${college.feeRange.min}K–${college.feeRange.max}K` },
-                                { label: "NIRF Rank",  value: `#${college.nirfRank}`                           },
+                                { label: "Placement", value: `${college.placementPct}%`       },
+                                { label: "NIRF Rank", value: `#${college.nirfRank}`           },
+                                { label: "NAAC",      value: college.naacGrade                },
                               ].map(({ label, value }) => (
                                 <div key={label}>
                                   <div className="text-[10px] uppercase tracking-wide" style={{ color: T.muted }}>{label}</div>
@@ -1125,19 +1026,14 @@ export function CollegeFinderPage({
                             </div>
                           </div>
 
-                          {/* Course chips */}
                           <div className="flex flex-wrap gap-1 mb-4">
-                            {college.courses.slice(0, 3).map((c) => (
+                            {college.courses.slice(0, 3).map((c, i) => (
                               <span
-                                key={c}
+                                key={`${college.id}-course-${i}`}
                                 className="text-[10px] px-2 py-0.5 rounded-full"
-                                style={{
-                                  background: T.surface,
-                                  color:      T.muted,
-                                  border:     `1px solid ${T.border}`,
-                                }}
+                                style={{ background: T.surface, color: T.muted, border: `1px solid ${T.border}` }}
                               >
-                                {c}
+                                {typeof c === 'string' ? c : c.course_name}
                               </span>
                             ))}
                             {college.courses.length > 3 && (
@@ -1151,11 +1047,7 @@ export function CollegeFinderPage({
                           </div>
                         </div>
 
-                        {/* Card actions */}
-                        <div
-                          className="px-4 pb-4 pt-3 flex gap-2"
-                          style={{ borderTop: `1px solid ${T.border}99` }}
-                        >
+                        <div className="px-4 pb-4 pt-3 flex gap-2" style={{ borderTop: `1px solid ${T.border}99` }}>
                           <Button
                             data-ocid={`finder.primary_button.${idx + 1}`}
                             size="sm"
@@ -1201,7 +1093,6 @@ export function CollegeFinderPage({
             style={{ background: T.heroBg }}
           >
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-              {/* Section header */}
               <div className="text-center mb-10">
                 <div
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4"
@@ -1220,19 +1111,15 @@ export function CollegeFinderPage({
                 </p>
               </div>
 
-              {/* Chart grid */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* ── Chart 1: Match Score ── */}
+                {/* Chart 1: Match Score */}
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.10 }}
                   data-ocid="finder.chart_point"
                   className="rounded-2xl p-5"
-                  style={{
-                    background: "oklch(1 0 0 / 0.055)",
-                    border:     "1px solid oklch(1 0 0 / 0.10)",
-                  }}
+                  style={{ background: "oklch(1 0 0 / 0.055)", border: "1px solid oklch(1 0 0 / 0.10)" }}
                 >
                   <h3 className="font-heading font-bold text-white text-sm mb-1">Admission Probability</h3>
                   <p className="text-xs mb-4" style={{ color: "oklch(1 0 0 / 0.40)" }}>Match score by college</p>
@@ -1242,10 +1129,7 @@ export function CollegeFinderPage({
                         tick={{ fill: "oklch(1 0 0 / 0.35)", fontSize: 10 }} tickLine={false} axisLine={false} />
                       <YAxis type="category" dataKey="name" width={72}
                         tick={{ fill: "oklch(1 0 0 / 0.55)", fontSize: 10 }} tickLine={false} axisLine={false} />
-                      <Tooltip
-                        formatter={(v) => [`${v}%`, "Match"]}
-                        contentStyle={tooltipStyle}
-                      />
+                      <Tooltip formatter={(v) => [`${v}%`, "Match"]} contentStyle={tooltipStyle} />
                       <Bar dataKey="score" radius={[0, 4, 4, 0]}>
                         {matchBarData.map((entry) => <Cell key={entry.name} fill={entry.fill} />)}
                       </Bar>
@@ -1253,17 +1137,14 @@ export function CollegeFinderPage({
                   </ResponsiveContainer>
                 </motion.div>
 
-                {/* ── Chart 2: Package ── */}
+                {/* Chart 2: Package */}
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.18 }}
                   data-ocid="finder.chart_point"
                   className="rounded-2xl p-5"
-                  style={{
-                    background: "oklch(1 0 0 / 0.055)",
-                    border:     "1px solid oklch(1 0 0 / 0.10)",
-                  }}
+                  style={{ background: "oklch(1 0 0 / 0.055)", border: "1px solid oklch(1 0 0 / 0.10)" }}
                 >
                   <h3 className="font-heading font-bold text-white text-sm mb-1">Average Package (LPA)</h3>
                   <p className="text-xs mb-4" style={{ color: "oklch(1 0 0 / 0.40)" }}>Top matched colleges</p>
@@ -1273,26 +1154,20 @@ export function CollegeFinderPage({
                       <XAxis dataKey="name" angle={-35} textAnchor="end" interval={0}
                         tick={{ fill: "oklch(1 0 0 / 0.45)", fontSize: 9 }} tickLine={false} axisLine={false} />
                       <YAxis tick={{ fill: "oklch(1 0 0 / 0.35)", fontSize: 10 }} tickLine={false} axisLine={false} />
-                      <Tooltip
-                        formatter={(v) => [`₹${v} LPA`, "Avg Package"]}
-                        contentStyle={tooltipStyle}
-                      />
+                      <Tooltip formatter={(v) => [`₹${v} LPA`, "Avg Package"]} contentStyle={tooltipStyle} />
                       <Bar dataKey="pkg" fill={T.indigo} radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </motion.div>
 
-                {/* ── Chart 3: Placement Trend ── */}
+                {/* Chart 3: Placement Trend */}
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.26 }}
                   data-ocid="finder.chart_point"
                   className="rounded-2xl p-5"
-                  style={{
-                    background: "oklch(1 0 0 / 0.055)",
-                    border:     "1px solid oklch(1 0 0 / 0.10)",
-                  }}
+                  style={{ background: "oklch(1 0 0 / 0.055)", border: "1px solid oklch(1 0 0 / 0.10)" }}
                 >
                   <h3 className="font-heading font-bold text-white text-sm mb-1">Placement Trend</h3>
                   <p className="text-xs mb-4" style={{ color: "oklch(1 0 0 / 0.40)" }}>
@@ -1304,10 +1179,7 @@ export function CollegeFinderPage({
                       <XAxis dataKey="year"
                         tick={{ fill: "oklch(1 0 0 / 0.45)", fontSize: 10 }} tickLine={false} axisLine={false} />
                       <YAxis tick={{ fill: "oklch(1 0 0 / 0.35)", fontSize: 10 }} tickLine={false} axisLine={false} />
-                      <Tooltip
-                        formatter={(v) => [`₹${v} LPA`, ""]}
-                        contentStyle={tooltipStyle}
-                      />
+                      <Tooltip formatter={(v) => [`₹${v} LPA`, ""]} contentStyle={tooltipStyle} />
                       {top3Results.map((c, i) => (
                         <Line
                           key={c.id}
@@ -1321,7 +1193,6 @@ export function CollegeFinderPage({
                       ))}
                     </LineChart>
                   </ResponsiveContainer>
-                  {/* Legend */}
                   <div className="flex flex-wrap gap-3 mt-3">
                     {top3Results.map((c, i) => (
                       <div key={c.id} className="flex items-center gap-1.5">
@@ -1342,10 +1213,7 @@ export function CollegeFinderPage({
       {/* ══════════════════════════════════════════
           FOOTER
       ══════════════════════════════════════════ */}
-      <footer
-        className="py-8"
-        style={{ background: T.surface, borderTop: `1px solid ${T.border}` }}
-      >
+      <footer className="py-8" style={{ background: T.surface, borderTop: `1px solid ${T.border}` }}>
         <div className="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm" style={{ color: T.muted }}>
           <div className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" style={{ color: T.indigo }} />
@@ -1384,11 +1252,7 @@ export function CollegeFinderPage({
               data-ocid="finder.shortlist_button"
               onClick={() => setShortlistOpen(true)}
               className="flex items-center gap-2 font-bold text-sm px-4 py-3 rounded-2xl transition-all hover:brightness-95"
-              style={{
-                background: T.gold,
-                color:      T.navy,
-                boxShadow:  `0 4px 24px ${T.gold}70`,
-              }}
+              style={{ background: T.gold, color: T.navy, boxShadow: `0 4px 24px ${T.gold}70` }}
             >
               <BookmarkCheck className="w-4 h-4" />
               Shortlist ({savedIds.length})
@@ -1419,16 +1283,9 @@ export function CollegeFinderPage({
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 320, damping: 30 }}
               className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl max-h-[70vh] flex flex-col"
-              style={{
-                background: T.white,
-                boxShadow:  `0 -8px 40px oklch(0.16 0.055 258 / 0.25)`,
-              }}
+              style={{ background: T.white, boxShadow: `0 -8px 40px oklch(0.16 0.055 258 / 0.25)` }}
             >
-              {/* Drawer header */}
-              <div
-                className="flex items-center justify-between p-4"
-                style={{ borderBottom: `1px solid ${T.border}` }}
-              >
+              <div className="flex items-center justify-between p-4" style={{ borderBottom: `1px solid ${T.border}` }}>
                 <div className="flex items-center gap-2">
                   <BookmarkCheck className="w-5 h-5" style={{ color: T.gold }} />
                   <h3 className="font-heading font-bold text-base" style={{ color: T.navy }}>
@@ -1436,11 +1293,7 @@ export function CollegeFinderPage({
                   </h3>
                   <Badge
                     className="font-bold"
-                    style={{
-                      background: `${T.gold}22`,
-                      color:      T.goldText,
-                      border:     `1px solid ${T.gold}44`,
-                    }}
+                    style={{ background: `${T.gold}22`, color: T.goldText, border: `1px solid ${T.gold}44` }}
                   >
                     {savedIds.length}
                   </Badge>
@@ -1458,17 +1311,13 @@ export function CollegeFinderPage({
                 </button>
               </div>
 
-              {/* Drawer list */}
               <div className="overflow-y-auto flex-1 p-4 space-y-3">
                 {savedColleges.map((c, idx) => (
                   <div
                     key={c.id}
                     data-ocid={`finder.shortlist.item.${idx + 1}`}
                     className="flex items-center gap-3 rounded-xl px-4 py-3"
-                    style={{
-                      background: T.surface,
-                      border:     `1px solid ${T.border}`,
-                    }}
+                    style={{ background: T.surface, border: `1px solid ${T.border}` }}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="font-heading font-bold text-sm truncate" style={{ color: T.navy }}>
@@ -1494,7 +1343,6 @@ export function CollegeFinderPage({
                 ))}
               </div>
 
-              {/* Drawer footer */}
               <div className="p-4" style={{ borderTop: `1px solid ${T.border}` }}>
                 <Button
                   data-ocid="finder.compare_shortlist_button"
