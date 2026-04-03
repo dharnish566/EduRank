@@ -11,9 +11,10 @@ export interface College {
 
   // Location
   city: string;
-  district?: string; // ✅ ADDED — returned by backend, used in CompareTable & CollegeSelector
+  district?: string;
   state: string;
   location?: string;
+  website?: string;
 
   // Rankings & Scores
   rank?: number;
@@ -82,6 +83,7 @@ export const COLLEGES: College[] = [
     district:"Erode",
     state: "Tamil Nadu",
     location: "Rural",
+    website:"www.bitsathy.ac.in",
 
     rank: 0,
     nirfRank: 100,

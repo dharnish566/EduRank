@@ -320,6 +320,7 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
         if (!json.success || !json.data) throw new Error("Invalid response");
 
         const d = json.data;
+        console.log(d);
 
         const mapped: College = {
           id: d.id,
@@ -333,6 +334,7 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
           city: d.city ?? "",
           state: d.state ?? "",
           location: d.location ?? "",
+          website: d.website ?? "",
 
           // Rankings & Scores
           nirfRank: d.nirf?.rank ?? null,
@@ -688,6 +690,8 @@ function OverviewTab({ college }: { college: College }) {
                   {para}
                 </p>
               ))}
+
+              
 
             {/* Address Section */}
             {college.naacAddress && (

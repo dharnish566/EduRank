@@ -14,7 +14,7 @@ import { MapPin }   from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { College } from "../../data/colleges";
 
-import { TrendBadge }                             from "./TrendBadge";
+import { TrendBadge } from "./TrendBadge";
 import { getRankMedalStyle, getTypeBadgeStyle, getNaacBadgeStyle } from "../../utils/rankingStyles";
 
 interface RankingsTableProps {
@@ -34,6 +34,8 @@ export function RankingsTable({
   onToggleCompare,
   onViewDetails,
 }: RankingsTableProps) {
+
+  
   return (
     <div className="hidden md:block rounded-xl overflow-hidden border border-border shadow-card">
       <table className="w-full text-sm">
@@ -54,7 +56,6 @@ export function RankingsTable({
               "NIRF",
               "Score",
               "Placement",
-              "Avg Pkg",
               "Action",
             ].map((h) => (
               <th
@@ -70,9 +71,9 @@ export function RankingsTable({
         <tbody>
           <AnimatePresence mode="popLayout">
             {paginated.map((college, i) => {
-              // const medal      = getRankMedalStyle(college.rank);
-              // const isTopThree = college.rank <= 3;
               const rowIndex   = (safeCurrentPage - 1) * ITEMS_PER_PAGE + i + 1;
+
+              const medal = getRankMedalStyle(college.rank ?? 999);
 
               return (
                 <motion.tr
@@ -116,19 +117,11 @@ export function RankingsTable({
 
                   {/* Rank */}
                   <td className="px-4 py-3.5 whitespace-nowrap">
-                    {/* <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center font-heading font-black text-base"
-                      style={{
-                        background: medal.bg,
-                        color:      medal.text,
-                        boxShadow:  medal.shadow,
-                        fontVariationSettings: isTopThree
-                          ? '"wdth" 125, "wght" 900'
-                          : undefined,
-                      }}
-                    >
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-heading font-black text-base`}
+                      style={{background : medal.bg , color : medal.text , boxShadow: medal.shadow}}>
                       {college.rank}
-                    </div> */}
+                    </div>
                   </td>
 
                   {/* College name */}
@@ -192,25 +185,13 @@ export function RankingsTable({
                     </div>
                   </td>
 
-                  {/* Placement */}
+                  {/* Placement percentage*/}
                   <td className="px-4 py-3.5 whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
                       <span className="font-semibold text-sm text-foreground">
                         {college.placementPct}%
                       </span>
-                      {/* <TrendBadge
-                        trend={college.trend}
-                        change={college.trendChange}
-                      /> */}
-                    </div>
                   </td>
 
-                  {/* Avg Package */}
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <span className="font-semibold text-sm text-foreground">
-                      {/* {college.avgPackageLPA} LPA */}
-                    </span>
-                  </td>
 
                   {/* Action */}
                   <td className="px-4 py-3.5 whitespace-nowrap">

@@ -39,7 +39,7 @@ export function useRankingsData(limit = 10): UseRankingsDataReturn {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const json: RankingsApiResponse = await res.json();
-
+      console.log("fetched!", json);
       setColleges(json.data);
       setTotal(json.total);
       setTotalPages(json.totalPages);
