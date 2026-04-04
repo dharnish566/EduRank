@@ -895,7 +895,7 @@ export function CollegeFinderPage({
                             <div className="relative shrink-0">
                               <MatchScoreRing score={college.matchScore} size={68} />
                               <div
-                                className="absolute -bottom-1 -right-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                                className="absolute -bottom-3 -right-3 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
                                 style={{
                                   background: `${getMatchColor(college.matchScore)}22`,
                                   color:      getMatchColor(college.matchScore),

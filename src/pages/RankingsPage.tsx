@@ -1,21 +1,20 @@
-// src/pages/RankingsPage.tsx
-
+import { useState } from "react";
 import { Search } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { AnimatePresence, motion } from "motion/react";
 
-import { RankingsHeader }      from "../components/rankings/RankingsHeader";
+import { RankingsHeader } from "../components/rankings/RankingsHeader";
 import { RankingsControlsBar } from "../components/rankings/RankingsControlsBar";
-import { RankingsTable }       from "../components/rankings/RankingsTable";
-import { RankingsMobileList }  from "../components/rankings/RankingsMobileList";
-import { RankingsPagination }  from "../components/rankings/RankingsPagination";
-import { CompareBar }          from "../components/ui/compareBar";
-import { PageFooter }          from "../components/layout/PageFooter";
+import { RankingsTable } from "../components/rankings/RankingsTable";
+import { RankingsMobileList } from "../components/rankings/RankingsMobileList";
+import { RankingsPagination } from "../components/rankings/RankingsPagination";
+import { CompareBar } from "../components/ui/compareBar";
+import { PageFooter } from "../components/layout/PageFooter";
 
-import { useRankingsState }    from "../hooks/useRankingsState";
-import { useRankingsData }     from "../hooks/useRankingData";   // ← NEW
-import { SORT_LABELS }         from "../utils/rankingStyles";
-import type { RankingsPageProps } from "../types/rankings";
+import { useRankingsState } from "../hooks/useRankingsState";
+import { useRankingsData } from "../hooks/useRankingData";
+import { SORT_LABELS } from "../utils/rankingStyles";
+import type { RankingsPageProps, SortKey } from "../types/rankings";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -27,7 +26,17 @@ export function RankingsPage({
   onCompareIdsChange,
 }: RankingsPageProps) {
 
-  // ── Server state (pagination + raw data) ─────────────────────────
+  // ── Filter state ──────────────────────────────────────────
+  const [search,     setSearch]     = useState("");
+  const [cityFilter, setCityFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [naacFilter, setNaacFilter] = useState("all");
+  const [sortKey,    setSortKey]    = useState<SortKey>("overallScore");
+
+  // ── Server state ──────────────────────────────────────────
+  // Backend always paginates (10 per page) regardless of filters.
+  // `total` and `totalPages` reflect the FILTERED count, so
+  // pagination automatically adjusts to the search results.
   const {
     colleges,
     total,
@@ -35,37 +44,50 @@ export function RankingsPage({
     currentPage,
     isLoading,
     isError,
+    searchMode,   // true = filters active; used for UI copy only
     goToPage,
-  } = useRankingsData(ITEMS_PER_PAGE);
+  } = useRankingsData(ITEMS_PER_PAGE, {
+    search,
+    cityFilter,
+    typeFilter,
+    naacFilter,
+    sortKey,
+  });
 
-  // ── Client state (search / filters / compare) ─────────────────────
-  // Pass `colleges` (current page slice) as the source list so the
-  // filter hook only filters what the server already returned.
+  // ── Client state: cities dropdown, compare, filter badges ─
   const {
-    search,     setSearch,
-    cityFilter, setCityFilter,
-    typeFilter, setTypeFilter,
-    naacFilter, setNaacFilter,
-    sortKey,    setSortKey,
     cities,
     hasActiveFilters,
     activeFilterCount,
-    clearFilters,
-    filtered,          // ← client-side filtered view of the current page
     compareWarning,
     toggleCompare,
     MAX_COMPARE,
-  } = useRankingsState(colleges, compareIds, onCompareIdsChange);
-  // NOTE: useRankingsState signature change — accepts `colleges` as first arg.
-  // See section 5 below for the small update needed in that hook.
+  } = useRankingsState(
+    colleges,
+    compareIds,
+    onCompareIdsChange,
+    search,
+    cityFilter,
+    typeFilter,
+    naacFilter,
+    sortKey,
+  );
 
-  // When any filter changes, jump back to page 1 on the server too
-  const handleFilterChange = (setter: (v: string) => void) => (v: string) => {
-    setter(v);
-    goToPage(1);
+  // ── Clear all filters ─────────────────────────────────────
+  const clearFilters = () => {
+    setSearch("");
+    setCityFilter("all");
+    setTypeFilter("all");
+    setNaacFilter("all");
+    setSortKey("overallScore");
+    // goToPage(1);
   };
 
-  const displayList = filtered; // what the table/mobile list render
+  // ── Display list ──────────────────────────────────────────
+  // Always use `colleges` directly — the backend has already applied
+  // all filters and returned exactly 10 rows for the current page.
+  // No client-side re-filtering needed or wanted.
+  const displayList = colleges;
 
   return (
     <div className="min-h-screen bg-background font-body antialiased">
@@ -81,12 +103,12 @@ export function RankingsPage({
         cities={cities}
         hasActiveFilters={hasActiveFilters}
         activeFilterCount={activeFilterCount}
-        onSearchChange={handleFilterChange(setSearch)}
-        onCityChange={handleFilterChange(setCityFilter)}
-        onTypeChange={handleFilterChange(setTypeFilter)}
-        onNaacChange={handleFilterChange(setNaacFilter)}
-        onSortChange={(v) => { setSortKey(v); goToPage(1); }}
-        onClearFilters={() => { clearFilters(); goToPage(1); }}
+        onSearchChange={(v) => { setSearch(v)}}
+        onCityChange={(v)   => { setCityFilter(v)}}
+        onTypeChange={(v)   => { setTypeFilter(v)}}
+        onNaacChange={(v)   => { setNaacFilter(v)}}
+        onSortChange={(v)   => { setSortKey(v)}}
+        onClearFilters={clearFilters}
       />
 
       <main className="container mx-auto px-4 py-6">
@@ -96,7 +118,26 @@ export function RankingsPage({
           <p className="text-muted-foreground">
             {isLoading ? (
               <span className="animate-pulse text-muted-foreground">Loading…</span>
+            ) : searchMode ? (
+              // Filters active → show "100 results for 'iit'" + page range
+              <>
+                <span className="font-semibold text-foreground">
+                  {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, total)}
+                </span>
+                {" "}of{" "}
+                <span className="font-semibold text-foreground">{total}</span>{" "}
+                result{total !== 1 ? "s" : ""}
+                {search.trim() && (
+                  <>
+                    {" "}for{" "}
+                    <span className="font-semibold text-foreground">
+                      "{search.trim()}"
+                    </span>
+                  </>
+                )}
+              </>
             ) : (
+              // Normal browse → show "1–10 of 450 colleges"
               <>
                 Showing{" "}
                 <span className="font-semibold text-foreground">
@@ -182,9 +223,9 @@ export function RankingsPage({
         {!isLoading && !isError && displayList.length > 0 && (
           <>
             <RankingsTable
-              paginated={displayList}           // ← server page, optionally client-filtered
+              paginated={displayList}
               compareIds={compareIds}
-              safeCurrentPage={currentPage}     // ← from API hook
+              safeCurrentPage={currentPage}
               ITEMS_PER_PAGE={ITEMS_PER_PAGE}
               onToggleCompare={toggleCompare}
               onViewDetails={onNavigateToDetails}
@@ -199,10 +240,12 @@ export function RankingsPage({
               onViewDetails={onNavigateToDetails}
             />
 
+            {/* Pagination always shown — totalPages reflects filtered count
+                so "100 matches" correctly shows 10 pages of 10, not 44     */}
             <RankingsPagination
-              safeCurrentPage={currentPage}     // ← from API hook
-              totalPages={totalPages}            // ← from API response
-              onGoToPage={goToPage}              // ← calls fetchPage()
+              safeCurrentPage={currentPage}
+              totalPages={totalPages}
+              onGoToPage={goToPage}
             />
           </>
         )}

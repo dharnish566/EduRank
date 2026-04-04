@@ -118,7 +118,7 @@ export function RankingsTable({
                   {/* Rank */}
                   <td className="px-4 py-3.5 whitespace-nowrap">
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-heading font-black text-base`}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-normal font-black text-base`}
                       style={{background : medal.bg , color : medal.text , boxShadow: medal.shadow}}>
                       {college.rank}
                     </div>

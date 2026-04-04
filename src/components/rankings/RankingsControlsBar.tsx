@@ -1,11 +1,3 @@
-// ─────────────────────────────────────────────────────────
-//  src/components/rankings/RankingsControlsBar.tsx
-//  Extracted from: RankingsPage.tsx
-//    → The entire sticky controls <div> block (lines ~217–310)
-//  Zero JSX or style changes. Props mirror the exact state
-//  variables and setters that block used in the original.
-// ─────────────────────────────────────────────────────────
-
 import { Badge }  from "../ui/badge";
 import { Button } from "../ui/button";
 import { Input }  from "../ui/input";
@@ -139,6 +131,9 @@ export function RankingsControlsBar({
               <SelectItem value="A+">A+</SelectItem>
               <SelectItem value="A">A</SelectItem>
               <SelectItem value="B++">B++</SelectItem>
+              <SelectItem value="B+">B+</SelectItem>
+              <SelectItem value="B">B</SelectItem>
+              <SelectItem value="C">C</SelectItem>
             </SelectContent>
           </Select>
 

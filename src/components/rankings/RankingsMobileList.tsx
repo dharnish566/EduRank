@@ -34,7 +34,7 @@ export function RankingsMobileList({
     <div className="md:hidden flex flex-col gap-3">
       <AnimatePresence mode="popLayout">
         {paginated.map((college, i) => {
-          const medal    = getRankMedalStyle(college.rank);
+          const medal    = getRankMedalStyle(college.rank ?? 999);
           const rowIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE + i + 1;
 
           return (
@@ -121,16 +121,8 @@ export function RankingsMobileList({
                   </span>
                   <TrendBadge
                     trend={college.trend}
-                    change={college.trendChange}
+                    change={college.trendChange ?? 0}
                   />
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                    Avg:
-                  </span>
-                  <span className="font-semibold text-xs">
-                    {college.avgPackageLPA} LPA
-                  </span>
                 </div>
               </div>
 

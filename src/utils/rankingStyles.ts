@@ -23,6 +23,8 @@ export function getTypeBadgeStyle(type: College["type"]): string {
       return "bg-[oklch(0.54_0.06_240/0.12)] text-[oklch(0.30_0.05_240)] border border-[oklch(0.54_0.06_240/0.35)]";
     case "Private":
       return "bg-[oklch(0.56_0.18_305/0.12)] text-[oklch(0.32_0.17_305)] border border-[oklch(0.56_0.18_305/0.35)]";
+    default:
+      return "";
   }
 }
 
@@ -33,9 +35,17 @@ export function getNaacBadgeStyle(grade: College["naacGrade"]): string {
     case "A+":
       return "bg-[oklch(0.52_0.18_148/0.14)] text-[oklch(0.28_0.18_148)] border border-[oklch(0.52_0.18_148/0.42)] font-bold";
     case "A":
-      return "bg-[oklch(0.46_0.19_266/0.13)] text-[oklch(0.28_0.18_266)] border border-[oklch(0.46_0.19_266/0.38)] font-bold";
+      return "bg-[oklch(0.46_0.19_266/0.20)] text-[oklch(0.28_0.18_266)] border border-[oklch(0.46_0.19_266/0.38)] font-bold";
     case "B++":
-      return "bg-[oklch(0.54_0.06_240/0.13)] text-[oklch(0.34_0.05_240)] border border-[oklch(0.54_0.06_240/0.36)] font-bold";
+      return "bg-[oklch(0.54_0.06_240/0.20)] text-[oklch(0.34_0.05_240)] border border-[oklch(0.54_0.06_240/0.36)] font-bold";
+    case "B+":
+      return "bg-[oklch(0.60_0.12_300/0.20)] text-[oklch(0.32_0.12_300)] border border-[oklch(0.60_0.12_300/0.36)] font-bold";
+    case "B":
+      return "bg-[oklch(0.58_0.14_24/0.20)] text-[oklch(0.34_0.13_24)] border border-[oklch(0.58_0.14_24/0.36)] font-bold";
+    case "C":
+      return "bg-[oklch(0.55_0.08_50/0.20)] text-[oklch(0.36_0.07_50)] border border-[oklch(0.55_0.08_50/0.36)] font-bold";
+    default:
+      return "bg-[oklch(0.92_0.01_258/0.5)] text-[oklch(0.45_0.02_258)] border border-[oklch(0.75_0.02_258/0.4)] font-bold";
   }
 }
 
