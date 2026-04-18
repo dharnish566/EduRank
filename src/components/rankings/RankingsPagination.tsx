@@ -1,8 +1,3 @@
-// ─────────────────────────────────────────────────────────
-//  src/components/rankings/RankingsPagination.tsx
-// ─────────────────────────────────────────────────────────
-
-import { Button } from "../ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface RankingsPaginationProps {
@@ -19,114 +14,131 @@ export function RankingsPagination({
   if (totalPages <= 1) return null;
 
   const MAX_VISIBLE = 5;
-
-  let startPage = Math.max(
-    1,
-    safeCurrentPage - Math.floor(MAX_VISIBLE / 2)
-  );
-
-  let endPage = startPage + MAX_VISIBLE - 1;
-
+  let startPage = Math.max(1, safeCurrentPage - Math.floor(MAX_VISIBLE / 2));
+  let endPage   = startPage + MAX_VISIBLE - 1;
   if (endPage > totalPages) {
-    endPage = totalPages;
+    endPage   = totalPages;
     startPage = Math.max(1, endPage - MAX_VISIBLE + 1);
   }
-
   const visiblePages: number[] = [];
-  for (let p = startPage; p <= endPage; p++) {
-    visiblePages.push(p);
-  }
+  for (let p = startPage; p <= endPage; p++) visiblePages.push(p);
+
+  const navBtn =
+    "inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-medium transition-all " +
+    "bg-white border border-[rgba(99,82,200,0.22)] text-[#534AB7] " +
+    "hover:bg-[rgba(83,74,183,0.07)] hover:border-[rgba(83,74,183,0.45)] " +
+    "disabled:opacity-35 disabled:pointer-events-none";
 
   return (
-    <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
-      <p className="text-sm text-muted-foreground">
+    <div
+      className="flex items-center justify-between flex-wrap gap-4 mt-8 pt-6"
+      style={{ borderTop: "0.5px solid rgba(99,82,200,0.15)" }}
+    >
+      {/* Page info */}
+      <p className="text-sm" style={{ color: "#888780" }}>
         Page{" "}
-        <span className="font-semibold text-foreground">{safeCurrentPage}</span>
+        <span className="font-bold" style={{ color: "#1a1540" }}>{safeCurrentPage}</span>
         {" "}of{" "}
-        <span className="font-semibold text-foreground">{totalPages}</span>
+        <span className="font-bold" style={{ color: "#1a1540" }}>{totalPages}</span>
       </p>
 
-      <div className="flex items-center gap-2">
-        {/* Prev Button */}
-        <Button
+      <div className="flex items-center gap-1.5">
+
+        {/* Prev */}
+        <button
           data-ocid="rankings.pagination_prev"
-          variant="outline"
-          size="sm"
           onClick={() => onGoToPage(safeCurrentPage - 1)}
           disabled={safeCurrentPage === 1}
-          className="h-9 px-4 gap-1.5 font-medium border-border text-sm disabled:opacity-40 hover:border-indigo/40 hover:text-indigo transition-colors"
+          className={navBtn}
         >
           <ChevronLeft className="w-4 h-4" />
           Prev
-        </Button>
+        </button>
 
         {/* Page numbers */}
         <div className="flex items-center gap-1">
-          {/* First page + ellipsis */}
+
           {startPage > 1 && (
             <>
-              <button
-                onClick={() => onGoToPage(1)}
-                className="w-9 h-9 rounded-lg text-sm font-semibold"
-              >
-                1
-              </button>
-              {startPage > 2 && <span className="px-1">...</span>}
+              <PageBtn p={1} active={false} onClick={() => onGoToPage(1)} />
+              {startPage > 2 && <Ellipsis />}
             </>
           )}
 
-          {/* Visible pages */}
           {visiblePages.map((p) => (
-            <button
-              type="button"
+            <PageBtn
               key={p}
+              p={p}
+              active={p === safeCurrentPage}
               onClick={() => onGoToPage(p)}
-              className="w-9 h-9 rounded-lg text-sm font-semibold transition-all duration-200"
-              style={
-                p === safeCurrentPage
-                  ? {
-                      background: "oklch(0.16 0.055 258)",
-                      color: "oklch(0.98 0.005 258)",
-                    }
-                  : {
-                      background: "transparent",
-                      color: "oklch(0.50 0.025 258)",
-                    }
-              }
-            >
-              {p}
-            </button>
+            />
           ))}
 
-          {/* Last page + ellipsis */}
           {endPage < totalPages && (
             <>
-              {endPage < totalPages - 1 && (
-                <span className="px-1">...</span>
-              )}
-              <button
-                onClick={() => onGoToPage(totalPages)}
-                className="w-9 h-9 rounded-lg text-sm font-semibold"
-              >
-                {totalPages}
-              </button>
+              {endPage < totalPages - 1 && <Ellipsis />}
+              <PageBtn p={totalPages} active={false} onClick={() => onGoToPage(totalPages)} />
             </>
           )}
         </div>
 
-        {/* Next Button */}
-        <Button
+        {/* Next */}
+        <button
           data-ocid="rankings.pagination_next"
-          variant="outline"
-          size="sm"
           onClick={() => onGoToPage(safeCurrentPage + 1)}
           disabled={safeCurrentPage === totalPages}
-          className="h-9 px-4 gap-1.5 font-medium border-border text-sm disabled:opacity-40 hover:border-indigo/40 hover:text-indigo transition-colors"
+          className={navBtn}
         >
           Next
           <ChevronRight className="w-4 h-4" />
-        </Button>
+        </button>
+
       </div>
     </div>
+  );
+}
+
+function PageBtn({
+  p, active, onClick,
+}: { p: number; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-9 h-9 rounded-lg text-sm font-semibold transition-all " 
+      style={
+        active
+          ? {
+              background: "linear-gradient(135deg, #1a1540, #2d1f7a)",
+              color:      "#ffffff",
+              boxShadow:  "0 2px 10px rgba(83,74,183,0.30)",
+              fontWeight: 700,
+            }
+          : {
+              background: "transparent",
+              color:      "#888780",
+            }
+      }
+      onMouseEnter={(e) => {
+        if (!active) {
+          (e.currentTarget as HTMLElement).style.background = "rgba(83,74,183,0.07)";
+          (e.currentTarget as HTMLElement).style.color      = "#534AB7";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!active) {
+          (e.currentTarget as HTMLElement).style.background = "transparent";
+          (e.currentTarget as HTMLElement).style.color      = "#888780";
+        }
+      }}
+    >
+      {p}
+    </button>
+  );
+}
+
+function Ellipsis() {
+  return (
+    <span className="text-sm px-0.5" style={{ color: "#B4B2A9" }}>···</span>
   );
 }

@@ -1,26 +1,48 @@
-// ─────────────────────────────────────────────────────────
-//  src/components/layout/PageFooter.tsx
-//  Extracted from: RankingsPage.tsx
-//    → The <footer> block at the bottom of the page
-//  JSX is 100% identical — no changes at all.
-// ─────────────────────────────────────────────────────────
-
 import { BarChart3 } from "lucide-react";
 
 export function PageFooter() {
   return (
     <footer
-      className="mt-16 py-8 border-t border-border"
-      style={{ background: "oklch(0.975 0.005 258)" }}
+      className="py-6"
+      style={{
+        background: "oklch(0.16 0.055 258)",
+        borderTop: "1px solid oklch(1 0 0 / 0.08)",
+      }}
     >
-      <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-around gap-4 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <p>
-            © {new Date().getFullYear()}
-          </p>
-          <BarChart3 className="w-4 h-4 text-indigo" />
-          <span>College Ranking Analytics Platform</span>
+      <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+
+        {/* Left — brand */}
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: "oklch(0.80 0.16 86 / 0.15)", border: "0.5px solid oklch(0.80 0.16 86 / 0.25)" }}
+          >
+            <BarChart3 className="w-3.5 h-3.5" style={{ color: "oklch(0.80 0.16 86)" }} />
+          </div>
+          <span
+            className="text-sm font-semibold tracking-wide"
+            style={{ color: "oklch(0.90 0.04 265)" }}
+          >
+            College Ranking Analytics
+          </span>
         </div>
+
+        {/* Center — tagline */}
+        <p
+          className="text-xs text-center"
+          style={{ color: "oklch(0.55 0.05 265)" }}
+        >
+          Powered by NAAC · NIRF · TNEA data
+        </p>
+
+        {/* Right — copyright */}
+        <p
+          className="text-xs"
+          style={{ color: "oklch(0.50 0.04 265)" }}
+        >
+          © {new Date().getFullYear()} All rights reserved.
+        </p>
+
       </div>
     </footer>
   );

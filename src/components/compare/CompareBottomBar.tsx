@@ -30,8 +30,6 @@ export function CompareBottomBar({
             style={{
               background:     "oklch(0.16 0.055 258 / 0.97)",
               backdropFilter: "blur(12px)",
-              borderTop:      "1px solid oklch(1 0 0 / 0.10)",
-              boxShadow:      "0 -4px 24px oklch(0.16 0.055 258 / 0.30)",
             }}
           >
             <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
