@@ -270,10 +270,10 @@ export function mapToCollegeWithScore(
 
 // ── 6. API calls ─────────────────────────────────────────────────────────
 
-const BASE = "http://localhost:5000/api";
+// const BASE = "http://localhost:5000/api";
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res  = await fetch(`${BASE}${path}`, {
+  const res  = await fetch(`${import.meta.env.VITE_API_BASE}${path}`, {
     headers: { "Content-Type": "application/json" },
     ...init,
   });
