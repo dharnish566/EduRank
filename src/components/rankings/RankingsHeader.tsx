@@ -141,7 +141,7 @@ export function RankingsHeader({ onNavigateHome }: RankingsHeaderProps) {
               {
                 icon: Clock,
                 label: "Last Updated",
-                value: "Jan 2024",
+                value: "Jun 2024",
                 iconColor: "#68dfaa",
                 iconBg: "rgba(100,220,160,0.11)",
               },
