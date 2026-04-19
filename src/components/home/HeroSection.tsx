@@ -14,8 +14,8 @@ const TITLE_WORDS = ["Smart", "College", "Ranking", "Analytics", "Platform"];
 const STATS = [
   {
     icon: BarChart2,
-    countTo: 1200,
-    display: "1,200+",
+    countTo: 400,
+    display: "400+",
     label: "Colleges Indexed",
     sub: "Across Tamil Nadu",
     animates: true,
