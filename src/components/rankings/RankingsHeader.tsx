@@ -127,7 +127,7 @@ export function RankingsHeader({ onNavigateHome }: RankingsHeaderProps) {
               {
                 icon: BarChart3,
                 label: "Total Colleges",
-                value: "600+",
+                value: "400+",
                 iconColor: "oklch(0.80 0.16 86)",
                 iconBg: "oklch(0.80 0.16 86 / 0.13)",
               },
