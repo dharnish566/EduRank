@@ -36,13 +36,21 @@ export function BenefitsSection() {
             className="eyebrow-tag mb-4"
             style={{
               display: "inline-flex",
-              justifyContent: "center",
-              color: "oklch(1 0 0 / 0.65)",
-              background: "oklch(1 0 0 / 0.08)",
-              border: "1px solid oklch(1 0 0 / 0.18)",
+              alignItems: "center",
+              gap: "7px",
+              padding: "5px 14px",
+              borderRadius: "999px",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              letterSpacing: "0.09em",
+              textTransform: "uppercase",
+              color: "oklch(0.46 0.10 75)",
+              background: "oklch(0.78 0.15 85 / 0.10)",
+              border: "1px solid oklch(0.78 0.15 85 / 0.28)",
             }}
           >
-            Why Choose Us
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "oklch(0.65 0.14 82)", flexShrink: 0, display: "inline-block" }} />
+            Why Choose us
           </div>
 
           {/* "text-white" — standard Tailwind, kept as-is */}

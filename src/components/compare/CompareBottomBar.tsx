@@ -74,6 +74,16 @@ export function CompareBottomBar({
                   onClick={onNavigateToRankings}
                   size="sm"
                   className="bg-gold text-foreground hover:brightness-95 font-semibold text-sm"
+                  style={{
+                  background:  selectedColleges.length >= 2
+                    ? "linear-gradient(135deg, #f5c842 0%, #e8a820 100%)"
+                    : "linear-gradient(135deg, #f5c842 0%, #e8a820 100%)",
+                  color:       "#1e1456",
+                  border:      "none",
+                  boxShadow:   selectedColleges.length >= 2
+                    ? "0 2px 12px rgba(245, 200, 66, 0.30)"
+                    : "none",
+                }}
                 >
                   + Add from Rankings
                 </Button>

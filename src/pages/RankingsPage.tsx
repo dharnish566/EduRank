@@ -116,7 +116,7 @@ export function RankingsPage({
         {/* Results summary */}
         <div className="flex items-center justify-between mb-5 text-sm">
           <p className="text-muted-foreground">
-            {isLoading ? (
+            {isLoading   ? (
               <span className="animate-pulse text-muted-foreground">Loading…</span>
             ) : searchMode ? (
               // Filters active → show "100 results for 'iit'" + page range

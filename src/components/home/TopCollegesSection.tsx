@@ -97,43 +97,45 @@ export function TopCollegesSection({
   const [error, setError] = useState("");
 
   // ✅ FETCH DATA
-useEffect(() => {
-  const saved = localStorage.getItem("topColleges");
+  useEffect(() => {
+    const saved = localStorage.getItem("topColleges");
 
-  if (saved) {
-    setColleges(JSON.parse(saved)); // ⚡ instant load
-  }
-
-  const fetchColleges = async () => {
-    try {
-      const res = await fetch(apiUrl("/colleges/top-colleges"));
-      const data = await res.json();
-
-      const formatted = data.map((item: any) => ({
-        rank: item.rank,
-        name: item.name,
-        city: item.city || "N/A",
-        naacGrade: item.naacGrade,
-        nirfRank: Number(item.nirfRank),
-        overallScore: Number(item.overallScore),
-      }));
-
-      setColleges(formatted);
-      localStorage.setItem("topColleges", JSON.stringify(formatted)); // 💾 cache
-    } catch (err) {
-      console.error(err);
+    if (saved) {
+      setColleges(JSON.parse(saved)); // ⚡ instant load
     }
-  };
 
-  fetchColleges();
-}, []);
+    const fetchColleges = async () => {
+      try {
+        const res = await fetch(apiUrl("/colleges/top-colleges"));
+        const data = await res.json();
+
+        const formatted = data.map((item: any) => ({
+          rank: item.rank,
+          name: item.name,
+          city: item.city || "N/A",
+          naacGrade: item.naacGrade,
+          nirfRank: Number(item.nirfRank),
+          overallScore: Number(item.overallScore),
+        }));
+
+        setColleges(formatted);
+        localStorage.setItem("topColleges", JSON.stringify(formatted)); // 💾 cache
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchColleges();
+  }, []);
 
   // ✅ LOADING UI
-  {loading && (
-  <p className="text-center text-sm text-gray-400">
-    Updating rankings...
-  </p>
-)}
+  {
+    loading && (
+      <p className="text-center text-sm text-gray-400">
+        Updating rankings...
+      </p>
+    )
+  }
 
   if (error) {
     return (
@@ -166,12 +168,20 @@ useEffect(() => {
             className="eyebrow-tag mb-4"
             style={{
               display: "inline-flex",
-              justifyContent: "center",
-              color: "oklch(0.22 0.08 258 / 0.65)",
-              background: "oklch(0.22 0.08 258 / 0.07)",
-              border: "1px solid oklch(0.22 0.08 258 / 0.18)",
+              alignItems: "center",
+              gap: "7px",
+              padding: "5px 14px",
+              borderRadius: "999px",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              letterSpacing: "0.09em",
+              textTransform: "uppercase",
+              color: "oklch(0.46 0.10 75)",
+              background: "oklch(0.78 0.15 85 / 0.10)",
+              border: "1px solid oklch(0.78 0.15 85 / 0.28)",
             }}
           >
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "oklch(0.65 0.14 82)", flexShrink: 0, display: "inline-block" }} />
             Top Performers
           </div>
 
