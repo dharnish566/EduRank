@@ -14,8 +14,8 @@ const TITLE_WORDS = ["Smart", "College", "Ranking", "Analytics", "Platform"];
 const STATS = [
   {
     icon: BarChart2,
-    countTo: 400,
-    display: "400+",
+    countTo: 400  ,
+    display: "1,200+",
     label: "Colleges Indexed",
     sub: "Across Tamil Nadu",
     animates: true,
@@ -533,7 +533,7 @@ export function HeroSection({ onNavigateToRankings }: HeroSectionProps) {
                     {stat.animates && stat.countTo !== null
                       ? <AnimatedNumber
                           target={stat.countTo}
-                          suffix={stat.countTo === 1200 ? "+" : ""}
+                          suffix={stat.countTo === 400 ? "+" : ""}
                           play={statsPlay}
                         />
                       : stat.display
