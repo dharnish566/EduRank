@@ -1,4 +1,4 @@
-import { Badge } from "../components/ui/badge";
+
 import { Button } from "../components/ui/button";
 import { COLLEGES, type College } from "../data/colleges";
 import { TneaTab } from "../components/detailed/tneaStats";
@@ -27,23 +27,8 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiUrl } from "../utils/api";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 
-/* ─── Design Tokens ────────────────────────────────────────────────────────
-   Navy-slate hero → clean white content panels → gold/indigo accents.
-   Every colour is derived from these four variables so swapping theme is
-   one-place change.
-   ────────────────────────────────────────────────────────────────────────── */
+
 const T = {
   /* Hero background – deep navy */
   heroBg: "oklch(0.16 0.055 258)",
@@ -159,14 +144,14 @@ function ScoreRing({ score }: { score: number }) {
 
 /* -------------format Nirf Rank--------------------------*/
 function formatNirfRank(rank: number | null | undefined): string {
-    if (rank === null || rank === undefined) return "-";
+  if (rank === null || rank === undefined) return "-";
 
-    if (rank == 150) return "101-150";
-    if (rank == 200) return "151-200";
-    if (rank == 300) return "201-300";
+  if (rank == 150) return "101-150";
+  if (rank == 200) return "151-200";
+  if (rank == 300) return "201-300";
 
-    return rank.toString();
-  }
+  return rank.toString();
+}
 
 /* ─────────────────── Hero Stat Card ─────────────────── */
 function HeroStatCard({
@@ -562,8 +547,8 @@ export function CollegeDetailsPage({ collegeId, onNavigateBack, onAddToCompare, 
             transition={{ duration: 0.48, delay: 0.18 }}>
             <HeroStatCard icon={Medal} label="NIRF Rank" value={`${formatNirfRank(college.nirfRank)}`} sub="National Ranking" />
             <HeroStatCard icon={BarChart3} label="Overall Score" value={`${(college.overallScore ?? 0) > (college.finalScore ?? 0)
-                ? college.overallScore
-                : college.finalScore
+              ? college.overallScore
+              : college.finalScore
               }`} sub="Platform Score" accent={T.gold} />
             <HeroStatCard icon={Users} label="Placement" value={`${college.placementPct}%`} sub="2024 Batch" />
             <HeroStatCard icon={DollarSign} label="Naac Grade" value={`${college.naacGrade}`} sub="Annual CTC" />
@@ -668,7 +653,7 @@ function OverviewTab({ college }: { college: College }) {
       .replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
-  
+
 
   return (
     <motion.div variants={containerV} initial="hidden" animate="visible" className="space-y-8">
@@ -690,9 +675,7 @@ function OverviewTab({ college }: { college: College }) {
                   {para}
                 </p>
               ))}
-
               
-
             {/* Address Section */}
             {college.naacAddress && (
               <div
@@ -713,6 +696,32 @@ function OverviewTab({ college }: { college: College }) {
                 >
                   {toTitleCase(college.naacAddress)}
                 </p>
+              </div>
+            )}
+
+            {/* Website Section */}
+            {college.website && (
+              <div
+                className="mt-4 pt-4"
+                style={{ borderTop: `1px solid ${T.border}` }}
+              >
+                <p
+                  className="text-xs font-semibold mb-2 flex items-center gap-2"
+                  style={{ color: T.navy }}
+                >
+                  <Building2 className="w-4 h-4" style={{ color: T.indigo }} />
+                  WEBSITE
+                </p>
+
+                <a
+                  href={college.website.startsWith("http") ? college.website : `https://${college.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium hover:underline break-all"
+                  style={{ color: T.indigo }}
+                >
+                  {college.website}
+                </a>
               </div>
             )}
           </div>
