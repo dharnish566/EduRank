@@ -1,6 +1,7 @@
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Label } from "../components/ui/label";
+import { PageFooter } from "../components/layout/PageFooter.tsx";
 import {
   Select,
   SelectContent,
@@ -1106,26 +1107,7 @@ export function CollegeFinderPage({
       {/* ══════════════════════════════════════════
           FOOTER
       ══════════════════════════════════════════ */}
-      <footer className="py-8" style={{ background: T.surface, borderTop: `1px solid ${T.border}` }}>
-        <div className="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm" style={{ color: T.muted }}>
-          <div className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" style={{ color: T.indigo }} />
-            <span>College Ranking Analytics Platform</span>
-          </div>
-          <p>
-            © {new Date().getFullYear()}. Built with ❤️ using{" "}
-            <a
-              href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold hover:underline"
-              style={{ color: T.indigo }}
-            >
-              caffeine.ai
-            </a>
-          </p>
-        </div>
-      </footer>
+      <PageFooter/>
 
       {/* ══════════════════════════════════════════
           FLOATING SHORTLIST BUTTON
